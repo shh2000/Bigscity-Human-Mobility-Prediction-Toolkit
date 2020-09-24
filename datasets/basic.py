@@ -2,7 +2,7 @@ import json
 
 
 class Dataset(object):
-    datasets = {}
+    config = {}
     dirPath = ''
 
     def __init__(self, dirPath):
@@ -12,11 +12,14 @@ class Dataset(object):
         except:
             raise ValueError('config.dirPath is wrong')
         else:
-            self.datasets = f
+            self.config = f
 
     def load(self, name='format'):
-        if name in self.datasets.keys():
-            f = json.load(open(self.dirPath + '/datasets/' + name + '.json'))
-            return f
+        if name in self.config.keys():
+            if self.config[name] == 'local':
+                f = json.load(open(self.dirPath + '/datasets/' + name + '.json'))
+                return f
+            else:
+                pass
         else:
             raise ValueError('No such dataset')
