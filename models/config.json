@@ -1,0 +1,9 @@
+{
+  "models": [
+    "RNN",
+    "GRU",
+    "LSTM",
+    "Deepmove",
+    "HST-LSTM"
+  ]
+}

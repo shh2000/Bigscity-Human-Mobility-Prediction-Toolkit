@@ -25,3 +25,15 @@ users保存工程配置、写tasks和shell
 希望之前最困扰的路径问题能够解决：所有类初始化的时候都要加上根目录绝对路径，users下面第一次读可以用相对路径（毕竟config就在users下面）。users创建其他类时必须填好路径，其他类创建其他类时必须用自己创建时的那个路径去创建其他类
 
 如果还有更好的解决路径问题的方法就改成更好的方法
+
+### 类之前创建关系
+
+shell创建task、evaluate
+
+task创建model、dataset、presentation
+
+dataset、pre、model之前都通过传参获取IO
+
+模型文件保存在runtimefiles里面，这个目录后面改叫cache感觉也可以
+
+过大的预处理结果也放进runtimefiles做缓存（防止炸内存）
