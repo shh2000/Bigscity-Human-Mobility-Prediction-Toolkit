@@ -14,6 +14,7 @@ if __name__ == '__main__':
            '{ "loc_true": [0], "loc_pred": [[0.4, 0.5, 0.7]] }' \
            '}' \
            '}'
+    # Eval.evaluate()
     Eval.evaluate(data=data, mode='ACC', topK=1)
     Eval.evaluate(data=data, mode='MAE')
     # Eval.evaluate(data=data, mode='MAPE')

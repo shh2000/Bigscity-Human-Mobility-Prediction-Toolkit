@@ -24,7 +24,6 @@ class Evaluate(object):
         self.metrics = {}
         self.trace_metrics = {}
 
-
     def init_data(self):
         """
         Here we transform specific data types to standard input type

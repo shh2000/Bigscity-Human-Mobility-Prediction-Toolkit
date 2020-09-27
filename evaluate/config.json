@@ -2,7 +2,7 @@
   "all_mode": [
     "ACC", "RMSE", "MSE", "MAE", "MAPE", "MARE", "SMAPE"
   ],
-  "data_path": "",
+  "data_path": "D:\\Users\\12908\\Documents\\git\\test.json",
   "data_type": "DeepMove",
   "output_gate": "False"
 }
