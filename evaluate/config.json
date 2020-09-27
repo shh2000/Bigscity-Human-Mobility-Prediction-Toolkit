@@ -1,6 +1,8 @@
 {
-  "index": [
-    "MSE",
-    "MAPE"
-  ]
+  "all_mode": [
+    "ACC", "RMSE", "MSE", "MAE", "MAPE", "MARE", "SMAPE"
+  ],
+  "data_path": "",
+  "data_type": "DeepMove",
+  "output_gate": "False"
 }
