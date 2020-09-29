@@ -3,7 +3,8 @@ import torch.nn as nn
 
 class Model(nn.Module):
     '''
-    Model 作为 pytorch Module 的子类，按照其要求覆写相应的方法即可
+    对于深度的 Model 就继承 pytorch Module 的子类，按照其要求覆写相应的方法即可
+    对于非深度的 Model 自行参考对应的开源代码实现，因为 Model 的调用是在 runner 内的，所以不需要对 Model 做统一的接口要求
     '''
     def __init__(self, dirPath, config):
         '''
@@ -11,9 +12,3 @@ class Model(nn.Module):
         config: 为外部传入的 global config，global config 将会覆盖 config 中的同名参数
         '''
         super(Model, self).__init__()
-
-    def forward(self, batch):
-        '''
-        batch 为从 pre.get_loader() 获取到的 dataloader 处拿到的 batch，可以保证模型拿到的 batch 是符合模型自己输入格式
-        具体格式上由模型实现者自行决定
-        '''

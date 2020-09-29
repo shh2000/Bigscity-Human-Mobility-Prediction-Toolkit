@@ -9,7 +9,7 @@ class Evaluate(object):
         config: 用于传递 global_config
         '''
 
-    def evalute(self, data):
+    def evaluate(self, data):
         '''
         data: 是根据 yield 机制生成的一个迭代类可以通过（对于没有做 batch 的模型的话，传一个 list 就行）
         for batch in data:

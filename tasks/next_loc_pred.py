@@ -17,15 +17,16 @@ class NextLocPred(Task):
         # model 有几个参数需要根据 dataset 去设置
         self.config['model']['pre_feature'] = pre.get_data_feature()
         model, runner = self.getModel(modelName)
-        if train or not os.path.exists(self.dirPath + 'runtimeFiles/save_model/{}.m'.format(modelName)):
+        model_cache = self.dirPath + 'runtimeFiles/save_model/{}_{}_{}.m'.format(modelName, preName, datasetName)
+        if train or not os.path.exists(model_cache):
             # 如果 train 设置为 true 或者不存在 cache 则要进行训练
             model = runner.train(model, pre)
             # 缓存 model
-            torch.save(model.state_dict(), self.dirPath + 'runtimeFiles/save_model/{}.m'.format(modelName))
+            torch.save(model.state_dict(), model_cache)
             print('finish train {}'.format(modelName))
         else:
             # load model from cache
-            model.load_state_dict(torch.load(self.dirPath + 'runtimeFiles/save_model/{}.m'.format(modelName)))
+            model.load_state_dict(torch.load(model_cache))
             print('load {} from cache'.format(modelName))
         res = runner.predict(model, pre)
         # 实例化 evaluate 类

@@ -14,6 +14,5 @@ class Task(object):
     def run(self, modelName, preName, datasetName, train):
         '''
         train: true 必要训练，false 视 cache 的有无决定是否训练
-        因为模型的参数过多所以做 cache 的话只会保留最近一次在此训练集上训练的结果，既无法保证当前 cache 的结果是用当前 config 训练的
-        返回一个 file_name 表示模型预测输出的中间文件名，格式为 modelName_preName_datasetName_timestamps.json
+        模型的 cache 命名： modelName_preName_datasetName.m 至少要保证这三个阶段相同的 cache 才能够使用不然可能报错
         '''
