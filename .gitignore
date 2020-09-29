@@ -1,8 +1,6 @@
 /venv
 /.idea
-/datasets/__pycache__
-/test/__pycache__
-/evaluate/__pycache__
-/models/__pycache__
-/presentation/__pycache__
 /runtimeFiles/*
+/.vscode
+*/__pycache__
+/global_config.json

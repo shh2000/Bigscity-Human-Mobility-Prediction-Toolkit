@@ -1,0 +1,12 @@
+{
+  "path": "D:\\study\\Bigscity-Human-Mobility-Prediction-Toolkit",
+  "task": {
+    "presentation": {},
+    "model": {},
+    "train": {},
+    "evaluate": {}
+  },
+  "model_pre": {
+    "deepMove": ["GenHistoryPre"]
+  }
+}
