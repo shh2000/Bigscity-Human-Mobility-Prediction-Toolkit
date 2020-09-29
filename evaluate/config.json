@@ -1,8 +1,11 @@
 {
   "all_mode": [
-    "ACC", "RMSE", "MSE", "MAE", "MAPE", "MARE", "SMAPE"
+    "ACC", "RMSE", "MSE", "MAE", "MAPE", "MARE", "SMAPE", "top-k"
+  ],
+  "mode_list": [
+    "ACC"
   ],
   "data_path": "D:\\Users\\12908\\Documents\\git\\test.json",
   "data_type": "DeepMove",
-  "output_gate": "False"
+  "output_switch": "False"
 }

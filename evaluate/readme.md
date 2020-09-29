@@ -20,13 +20,13 @@
 
 当需要进行位置预测评估时：
 
-1. 引入 `/evaluate` 目录下的 `basic.py` 文件。
+1. 引入 `/evaluate` 目录下的 `evaluate.py` 文件。
 2. 创建 `Evaluate` 类。
 3. 调用 `evaluate` 方法。
 4. 可参考 `/test/lzh_test.py` 文件。
 
 ```python
-from evaluate import basic as lpem
+from evaluate import evaluate as lpem
 
 if __name__ == '__main__':
     Eval = lpem.Evaluate(r'D:\Users\12908\Documents\git\Bigscity-Human-Mobility-Prediction-Toolkit')
@@ -42,13 +42,8 @@ if __name__ == '__main__':
            '{ "loc_true": [0], "loc_pred": [[0.4, 0.5, 0.7]] }' \
            '}' \
            '}'
-    Eval.evaluate(data=data, mode='ACC', topK=1)
-    Eval.evaluate(data=data, mode='MAE')
-    # Eval.evaluate(data=data, mode='MAPE')
-    # Eval.evaluate(data=data, mode='MARE')
-    Eval.evaluate(data=data, mode='MSE')
-    Eval.evaluate(data=data, mode='RMSE')
-    # Eval.evaluate(data=data, mode='SMAPE')
+    # Eval.evaluate()
+    Eval.evaluate(data=data, mode=['ACC', 'MAE', 'top-2', 'top-3'])
     Eval.save_result('/runtimeFiles/evaluate')
 ```
 
@@ -57,9 +52,10 @@ if __name__ == '__main__':
 #### config.json
 
 1. all_mode：所有支持的评估方法
-2. data_path：若采用从文件中读取数据进行评估，则该参数必填，为待评估文件的**绝对路径**。
-3. data_type：评估模型的数据类型，如对DeepMove模型的输出需要进行**预处理**。
-4. output_gate：控制是否在评估过程中输出评估信息，可选项**"True"**或**"False"**。
+2. mode_list：对模型采用的评估方法，以列表形式。
+3. data_path：若采用从文件中读取数据进行评估，则该参数必填，为待评估文件的**绝对路径**。
+4. data_type：评估模型的数据类型，如对DeepMove模型的输出需要进行**预处理**。
+5. output_gate：控制是否在评估过程中输出评估信息，可选项**"True"**或**"False"**。
 
 #### __init__(dir_path)
 
@@ -67,17 +63,12 @@ if __name__ == '__main__':
 
 1. dir_path：给出整个项目工程的绝对路径。
 
-#### evaluate(mode, topK, data)
+#### evaluate(data, mode)
 
 evaluate函数对应的参数含义。
 
-1. mode：用户选择**评估方法**，默认为**ACC**。
-
-2. topK：用户选择对应top-k ACC评估方法中的**k值**，默认为1。
-
-   注意：若选择非ACC评估方法，则k值无效，即改变k值对评估方法没有影响。
-
-3. data：用户可选择传入数据进行评估，**json类型或者可转换为json的str类型**，若不传入，则默认从config.json配置文件中读入待评估数据的路径进行评估。
+1. data：用户可选择传入数据进行评估，**json类型或者可转换为json的str类型**，若不传入，则默认从config.json配置文件中读入待评估数据的路径进行评估。
+2. mode：用户选择**评估方法**，以列表形式传入，可不传入，从配置文件中读取。
 
 #### save_result(result_path)
 

@@ -1,4 +1,4 @@
-from evaluate import basic as lpem
+from evaluate import evaluate as lpem
 
 if __name__ == '__main__':
     Eval = lpem.Evaluate(r'D:\Users\12908\Documents\git\Bigscity-Human-Mobility-Prediction-Toolkit')
@@ -15,11 +15,5 @@ if __name__ == '__main__':
            '}' \
            '}'
     # Eval.evaluate()
-    Eval.evaluate(data=data, mode='ACC', topK=1)
-    Eval.evaluate(data=data, mode='MAE')
-    # Eval.evaluate(data=data, mode='MAPE')
-    # Eval.evaluate(data=data, mode='MARE')
-    Eval.evaluate(data=data, mode='MSE')
-    Eval.evaluate(data=data, mode='RMSE')
-    # Eval.evaluate(data=data, mode='SMAPE')
+    Eval.evaluate(data=data, mode=['ACC', 'MAE', 'top-2', 'top-3'])
     Eval.save_result('/runtimeFiles/evaluate')
