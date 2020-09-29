@@ -33,21 +33,24 @@ class Evaluate(object):
         self.metrics = {}
         self.trace_metrics = {}
 
-    def evaluate(self, data=None, mode=None):
+    def evaluate(self, data=None, config=None, mode=None):
         """
         The entrance of evaluation (user-oriented)
         :param data: 待评估数据，也可以传入待评估数据的路径
+        :param config: 用户传进来的个性化参数
         :param mode: 指标，列表形式, 如 [MSE“，”MAPE“], 默认从配置文件中读入
         :return: 对应指标的结果
         """
-        if mode is not None:
-            self.mode_list = mode
         if data is not None:
             self.data = data
         try:
             self.data = json.load(open(self.data_path)) if data is None else data
         except Exception:
             raise ValueError('待评估数据的路径无效')
+        if mode is not None:
+            self.mode_list = mode
+        if config is not None:
+            self.load_config(config)
         pattern = re.compile("top-[1-9]\\d*$")
         for mode in self.mode_list:
             if mode in self.all_mode:
@@ -73,6 +76,21 @@ class Evaluate(object):
                 loc_pred.extend(t_loc_pred)
                 self.run_mode(t_loc_pred, t_loc_true, 'trace')
         self.run_mode(loc_pred, loc_true, 'model')
+
+    def load_config(self, config):
+        """
+        from global_config settings
+        :param config: 用户配置的个性化参数
+        :return:
+        """
+        if 'mode_list' in config.keys():
+            self.mode_list = config['mode_list']
+        if 'data_path' in config.keys():
+            self.data_path = config['data_path']
+        if 'data_type' in config.keys():
+            self.data_type = config['data_type']
+        if 'output_switch' in config.keys():
+            self.output_switch = config['output_switch'] == 'True'
 
     def run_mode(self, loc_pred, loc_true, field):
         """
