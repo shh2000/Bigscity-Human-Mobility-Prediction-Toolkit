@@ -36,17 +36,11 @@ class Evaluate(object):
     def evaluate(self, data=None, config=None, mode=None):
         """
         The entrance of evaluation (user-oriented)
-        :param data: 待评估数据，也可以传入待评估数据的路径
+        :param data: 待评估数据, 可以直接是dict类型或者str形式的dict类型，也可以是列表类型(分batch)
         :param config: 用户传进来的个性化参数
         :param mode: 指标，列表形式, 如 [MSE“，”MAPE“], 默认从配置文件中读入
         :return: 对应指标的结果
         """
-        if data is not None:
-            self.data = data
-        try:
-            self.data = json.load(open(self.data_path)) if data is None else data
-        except Exception:
-            raise ValueError('待评估数据的路径无效')
         if mode is not None:
             self.mode_list = mode
         if config is not None:
@@ -54,13 +48,31 @@ class Evaluate(object):
         pattern = re.compile("top-[1-9]\\d*$")
         for mode in self.mode_list:
             if mode in self.all_mode:
+                self.metrics[mode] = []
                 self.trace_metrics[mode] = []
             elif re.match(pattern, mode) is not None:
                 k = int(mode.split('-')[1])
+                self.metrics[mode] = []
                 self.trace_metrics[mode] = []
                 self.maxK = k if k > self.maxK else self.maxK
             else:
                 raise ValueError("{}: 不支持的评估方法".format(mode))
+        if data is not None:
+            self.data = data
+        try:
+            self.data = json.load(open(self.data_path)) if data is None else data
+        except Exception:
+            raise ValueError('待评估数据的路径无效')
+        if isinstance(self.data, list):
+            t_data = self.data
+            for batch_data in t_data:
+                self.data = batch_data
+        self.evaluate_data()
+
+    def evaluate_data(self):
+        """
+        evaluate data batch (internal)
+        """
         self.init_data()
         loc_true = []
         loc_pred = []
@@ -111,49 +123,49 @@ class Evaluate(object):
                 t, avg_acc = self.ACC(np.array(t_loc_pred[0]), np.array(loc_true))
                 self.output(self.mode, avg_acc, field)
                 if field == 'model':
-                    self.metrics[self.mode] = avg_acc
+                    self.metrics[self.mode].append(avg_acc)
                 else:
                     self.trace_metrics[self.mode].append(avg_acc)
             elif self.mode == 'RMSE':
                 avg_loss = self.RMSE(np.array(t_loc_pred[0]), np.array(loc_true))
                 self.output(self.mode, avg_loss, field)
                 if field == 'model':
-                    self.metrics[self.mode] = avg_loss
+                    self.metrics[self.mode].append(avg_loss)
                 else:
                     self.trace_metrics[self.mode].append(avg_loss)
             elif self.mode == 'MSE':
                 avg_loss = self.MSE(np.array(t_loc_pred[0]), np.array(loc_true))
                 self.output(self.mode, avg_loss, field)
                 if field == 'model':
-                    self.metrics[self.mode] = avg_loss
+                    self.metrics[self.mode].append(avg_loss)
                 else:
                     self.trace_metrics[self.mode].append(avg_loss)
             elif self.mode == "MAE":
                 avg_loss = self.MAE(np.array(t_loc_pred[0]), np.array(loc_true))
                 self.output(self.mode, avg_loss, field)
                 if field == 'model':
-                    self.metrics[self.mode] = avg_loss
+                    self.metrics[self.mode].append(avg_loss)
                 else:
                     self.trace_metrics[self.mode].append(avg_loss)
             elif self.mode == "MAPE":
                 avg_loss = self.MAPE(np.array(t_loc_pred[0]), np.array(loc_true))
                 self.output(self.mode, avg_loss, field)
                 if field == 'model':
-                    self.metrics[self.mode] = avg_loss
+                    self.metrics[self.mode].append(avg_loss)
                 else:
                     self.trace_metrics[self.mode].append(avg_loss)
             elif self.mode == "MARE":
                 avg_loss = self.MARE(np.array(t_loc_pred[0]), np.array(loc_true))
                 self.output(self.mode, avg_loss, field)
                 if field == 'model':
-                    self.metrics[self.mode] = avg_loss
+                    self.metrics[self.mode].append(avg_loss)
                 else:
                     self.trace_metrics[self.mode].append(avg_loss)
             elif self.mode == "SMAPE":
                 avg_loss = self.SMAPE(np.array(t_loc_pred[0]), np.array(loc_true))
                 self.output(self.mode, avg_loss, field)
                 if field == "model":
-                    self.metrics[self.mode] = avg_loss
+                    self.metrics[self.mode].append(avg_loss)
                 else:
                     self.trace_metrics[self.mode].append(avg_loss)
             else:
@@ -161,7 +173,7 @@ class Evaluate(object):
                 avg_acc = self.top_k(np.array(t_loc_pred, dtype=object), np.array(loc_true, dtype=object))
                 self.output(self.mode, avg_acc, field)
                 if field == 'model':
-                    self.metrics[self.mode] = avg_acc
+                    self.metrics[self.mode].append(avg_acc)
                 else:
                     self.trace_metrics[self.mode].append(avg_acc)
 
