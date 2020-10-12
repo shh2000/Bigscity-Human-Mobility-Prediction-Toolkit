@@ -1,4 +1,3 @@
-from runner.basic import Runner
 import json
 import torch
 import torch.nn as nn
@@ -6,73 +5,81 @@ import torch.optim as optim
 import numpy as np
 import os
 
+from runner.basic import Runner
+from models.deepmove import TrajPreLocalAttnLong
+
 class DeepMoveRunner(Runner):
 
-    def __init__(self, dirPath, config):
-        self.dirPath = dirPath
-        config_file = open(dirPath + 'config/run/deepMove.json', 'r')
-        self.config = json.load(config_file)
-        config_file.close()
-        # 全局 config 可以覆写 loc_config
-        if config:
-            for key in self.config:
-                if key in config:
-                    self.config[key] = config[key]
+    def __init__(self, dir_path, config, model_name, model_config):
+        self.dir_path = dir_path
+        with open(os.path.join(dir_path, 'config/run/deepMove.json'), 'r') as config_file:
+            self.config = json.load(config_file)
+            # 全局 config 可以覆写 loc_config
+            if config:
+                for key in self.config:
+                    if key in config:
+                        self.config[key] = config[key]
+        self.model = TrajPreLocalAttnLong(self.dir_path, model_config)
     
-    def train(self, model, pre):
+    def train(self, train_data, eval_data):
         if self.config['use_cuda']:
             criterion = nn.NLLLoss().cuda()
         else:
             criterion = nn.NLLLoss()
-        optimizer = optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=self.config['lr'],
+        optimizer = optim.Adam(filter(lambda p: p.requires_grad, self.model.parameters()), lr=self.config['lr'],
                             weight_decay=self.config['L2'])
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=self.config['lr_step'],
                                                  factor=self.config['lr_decay'], threshold= self.config['schedule_threshold'])
-        SAVE_PATH = 'model/save_model/'
-        tmp_path = '/checkpoint/'
-        if not os.path.exits(self.dirPath + SAVE_PATH + tmp_path):
-            os.makedirs(self.dirPath + SAVE_PATH + tmp_path)
+        tmp_path = '/tmp/checkpoint/'
+        if not os.path.exits(self.dir_path + tmp_path):
+            os.makedirs(self.dir_path + tmp_path)
         metrics = {}
         metrics['train_loss'] = []
         metrics['accuracy'] = []
-        train_data_loader, train_total_batch = pre.get_data('train')
-        test_data_loader,  test_total_batch = pre.get_data('test')
+        train_data_loader, train_total_batch = train_data['loader'], train_data['total_batch']
+        test_data_loader,  test_total_batch = eval_data['loader'], eval_data['total_batch']
         lr = self.config['lr']
         for epoch in range(self.config['max_epoch']):
-            model, avg_loss = self.run(train_data_loader, model, self.config['use_cuda'], optimizer, criterion, 
+            self.model, avg_loss = self.run(train_data_loader, self.model, self.config['use_cuda'], optimizer, criterion, 
                                         self.config['lr'], self.config['clip'], train_total_batch, self.config['verbose'])
             print('==>Train Epoch:{:0>2d} Loss:{:.4f} lr:{}'.format(epoch, avg_loss, lr))
             metrics['train_loss'].append(avg_loss)
             # eval stage
-            avg_loss, avg_acc = self.evaluate(test_data_loader, model, self.config['use_cuda'], test_total_batch, self.config['verbose'], criterion)
+            avg_loss, avg_acc = self.evaluate(test_data_loader, self.model, self.config['use_cuda'], test_total_batch, self.config['verbose'], criterion)
             print('==>Test Acc:{:.4f} Loss:{:.4f}'.format(avg_acc, avg_loss))
             metrics['accuracy'].append(avg_acc)
             save_name_tmp = 'ep_' + str(epoch) + '.m'
-            torch.save(model.state_dict(), SAVE_PATH + tmp_path + save_name_tmp)
+            torch.save(self.model.state_dict(), self.dir_path + tmp_path + save_name_tmp)
             scheduler.step(avg_acc)
             lr_last = lr
             lr = optimizer.param_groups[0]['lr']
             if lr_last > lr:
                 load_epoch = np.argmax(metrics['accuracy'])
                 load_name_tmp = 'ep_' + str(load_epoch) + '.m'
-                model.load_state_dict(torch.load(SAVE_PATH + tmp_path + load_name_tmp))
+                self.model.load_state_dict(torch.load(self.dir_path + tmp_path + load_name_tmp))
                 print('load epoch={} model state'.format(load_epoch))
             if lr <= 0.9 * 1e-5:
                 break
         best = np.argmax(metrics['accuracy'])  # 这个不是最好的一次吗？
         avg_acc = metrics['accuracy'][best]
         load_name_tmp = 'ep_' + str(best) + '.m'
-        model.load_state_dict(torch.load(SAVE_PATH + tmp_path + load_name_tmp))
+        self.model.load_state_dict(torch.load(self.dir_path + tmp_path + load_name_tmp))
         # 删除之前创建的临时文件夹
-        for rt, dirs, files in os.walk(SAVE_PATH + tmp_path):
+        for rt, dirs, files in os.walk(self.dir_path + tmp_path):
             for name in files:
                 remove_path = os.path.join(rt, name)
                 os.remove(remove_path)
-        os.rmdir(SAVE_PATH + tmp_path)
-        return model
+        os.rmdir(self.dir_path + tmp_path)
+
+    def load_cache(self, cache_name):
+        self.model.load_state_dict(torch.load(cache_name))
     
-    def predict(self, model, pre):
-        test_data_loader, test_total_batch = pre.get_data('test')
+    def save_cache(self, cache_name):
+        torch.save(self.model.state_dict(), cache_name)
+
+    def predict(self, data):
+        self.model.train(False)
+        test_data_loader, test_total_batch = data['loader'], data['total_batch']
         cnt = 0
         for loc, tim, history_loc, history_tim, history_count, uid, target, session_id in test_data_loader:
             if self.config['use_cuda']:
@@ -83,7 +90,7 @@ class DeepMoveRunner(Runner):
                 loc = torch.LongTensor(loc)
                 tim = torch.LongTensor(tim)
                 target = torch.LongTensor(target)
-            scores = model(loc, tim)
+            scores = self.model(loc, tim)
             # elif model_mode == 'simple':
             #     scores = model(loc, tim)
             #     scores = scores[:, -target_len:, :]

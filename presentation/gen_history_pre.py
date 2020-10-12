@@ -1,7 +1,3 @@
-from presentation.basic import Presentation
-from presentation.list_dataset import ListDataset
-from datasets import Dataset
-from utils import encodeLoc, parseTime, calculateBaseTime, calculateTimeOff
 import os
 import json
 import math
@@ -9,25 +5,56 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from torch.utils.data import DataLoader
 
+from presentation.basic import Presentation
+from presentation.list_dataset import ListDataset
+from utils.presentation_helper import encodeLoc, parseTime, calculateBaseTime, calculateTimeOff
+
 class GenHistoryPre(Presentation):
 
-    def __init__(self, dirPath, config, datasetName):
-        super(GenHistoryPre, self).__init__(dirPath)
-        config_file = open(dirPath + 'config/presentation/gen_history.json', 'r')
-        self.config = json.load(config_file)
-        config_file.close()
+    def __init__(self, dir_path, config, data, cache_name):
+        super(GenHistoryPre, self).__init__(dir_path)
+        with open(os.path.join(dir_path, 'config/presentation/gen_history.json'), 'r') as config_file:
+            self.config = json.load(config_file)
         # 全局 config 可以覆写 loc_config
+        parameters_str = ''
         for key in self.config:
             if key in config:
                 self.config[key] = config[key]
-        self.data = None
+            parameters_str += '_' + str(self.config[key])
+        self.cache_file_name = 'gen_history_{}{}.json'.format(cache_name, parameters_str)
+        self.data = data
         self.pad_item = None
-        self.load_data(datasetName)
 
-    def get_data(self, mode):
+    def get_data(self, mode, use_cache=True):
         '''
         return dataloader and total_batch
         '''
+        if mode == 'eval':
+            mode = 'test' # TODO: 暂时用测试集当 eval 吧，虽然不太好的样子
+        if use_cache and os.path.exists(os.path.join(self.dir_path, 'cache/pre_cache/', self.cache_file_name)):
+            # load cache
+            f = open(os.path.join(self.dir_path, 'cache/pre_cache/', self.cache_file_name), 'r')
+            self.data = json.load(f)
+            loc_pad = self.data['loc_size'] - 1
+            tim_pad = self.data['tim_size'] - 1
+            self.pad_item = (loc_pad, tim_pad)
+            f.close()
+        elif self.pad_item == None:
+            # 因为对 data 的切片过滤只需要进行一次
+            # 对 data 进行切片与过滤
+            transformed_data = self.cutter_filter(self.data)
+            # pad parameter
+            loc_pad = transformed_data['loc_size']
+            transformed_data['loc_size'] += 1
+            tim_pad = transformed_data['time_size']
+            transformed_data['time_size'] += 1
+            self.pad_item = (loc_pad, tim_pad)
+            self.data = transformed_data
+            # 做 cache
+            if not os.path.exists(os.path.join(self.dir_path, 'cache/pre_cache')):
+                os.makedirs(os.path.join(self.dir_path, 'cache/pre_cache'))
+            with open(os.path.join(self.dir_path, 'cache/pre_cache/', self.cache_file_name), 'w') as f:
+                json.dump(transformed_data, f)
         history_data = self.gen_history(mode)
         dataset = ListDataset(history_data)
         def collactor(batch):
@@ -51,7 +78,7 @@ class GenHistoryPre(Presentation):
             return loc, tim, history_loc, history_tim, history_count, uid, target, session_id
         data_loader = DataLoader(dataset=dataset, batch_size=self.config['batch_size'], num_workers=self.config['num_workers'], collate_fn=collactor)
         total_batch = dataset.__len__() / self.config['batch_size']
-        return data_loader, total_batch
+        return {'loader': data_loader, 'total_batch': total_batch}
 
     def get_data_feature(self):
         res = {
@@ -60,40 +87,6 @@ class GenHistoryPre(Presentation):
             'uid_size': self.data['uid_size']
         }
         return res
-
-    def load_data(self, datasetName):
-        '''
-        这一步可以把 cutter_and_filter 的结果缓存了
-        '''
-        parameters_str = ''
-        for key in self.config:
-            parameters_str += '_' + str(self.config[key])
-        cache_file_name = 'gen_history_{}{}.json'.format(datasetName, parameters_str)
-        if os.path.exists(self.dirPath + 'runtimeFiles/preCache/{}'.format(cache_file_name)):
-            # load cache
-            f = open(self.dirPath + 'runtimeFiles/preCache/{}'.format(cache_file_name), 'r')
-            self.data = json.load(f)
-            loc_pad = self.data['loc_size'] - 1
-            tim_pad = self.data['tim_size'] - 1
-            self.pad_item = (loc_pad, tim_pad)
-            f.close()
-        else:
-            dataset = Dataset(self.dirPath)
-            data = dataset.load(datasetName)
-            # 对 data 进行切片与过滤
-            transformed_data = self.cutter_filter(data)
-            # pad parameter
-            loc_pad = transformed_data['loc_size']
-            transformed_data['loc_size'] += 1
-            tim_pad = transformed_data['time_size']
-            transformed_data['time_size'] += 1
-            self.pad_item = (loc_pad, tim_pad)
-            self.data = transformed_data
-            # 做 cache
-            if not os.path.exists(self.dirPath + 'runtimeFiles/preCache'):
-                os.makedirs(self.dirPath + 'runtimeFiles/preCache')
-            with open(self.dirPath + 'runtimeFiles/preCache/{}'.format(cache_file_name), 'w') as f:
-                json.dump(transformed_data, f)
 
     def cutter_filter(self, data):
             '''

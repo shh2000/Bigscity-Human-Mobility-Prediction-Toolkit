@@ -19,4 +19,4 @@ if __name__ == "__main__":
     global_config = json.load(config_file)
     config_file.close()
     task = NextLocPred(config=global_config['task_config'])
-    task.run(modelName=model_name, preName=pre_name, datasetName=dataset_name, train=True)
+    task.run(model_name=model_name, pre_name=pre_name, dataset_name=dataset_name, train=True)

@@ -1,19 +1,23 @@
 
 class Presentation(object):
 
-    def __init__(self, dirPath, config, datasetName):
+    def __init__(self, dir_path, config, data, cache_name):
         '''
-        dirPath: 用于加载表示层的 config 获取超参
+        dir_path: 用于加载表示层的 config 获取超参
         config: 为外部传入的 global config，global config 将会覆盖 config 中的同名参数
-        datasetName: 用于加载原始数据集，数据的初步预处理在 Presentation 类 init 阶段完成，之后 get_data 可以只负责划分 test/train 集，做 batch 这些
+        data: 从 dataset load 出来的原始数据集
+        cache_name: 可以传递 datasetName，并不一定是最后的 cache 文件名，因为还需要将 pre 的参数也写到 cache 的文件名里面
         '''
-        self.dirPath = dirPath
+        self.dir_path = dir_path
 
-    def get_data(self, mode):
+    def get_data(self, mode, use_cache=True):
         '''
-        深度模型：建议该方法返回一个 torch.utils.data.Dataloader 对象
-        该方法的调用在对应模型的 Runner，故没有过多的约束条件
-        mode: train / test
+        返回值参考(gen_history_pre):
+        {
+            'loader': 一个 DataLoader 类的实例，用于支持 batch 训练,
+            'total_batch': 主要用于做 verbose 输出进度信息
+        }
+        mode: train / test / eval
         '''
         return None
 
