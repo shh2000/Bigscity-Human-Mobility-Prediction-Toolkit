@@ -1,0 +1,12 @@
+{
+ "name": "HST-LSTM",
+ "batch_size": 20,
+ "session_size": 10,
+ "step_size": 10,
+ "aoi_size": 3,
+ "input_size": 20,
+ "epochs": 100,
+ "lr": 1e-2,
+ "device": 0,
+ "use_gpu": false
+}

@@ -1,0 +1,11 @@
+{
+ "name": "HST-LSTM",
+ "batch_size": 20,
+ "input_size": 10,
+ "hidden_size": 10,
+ "aoi_size": 10,
+ "lr": 1e-4,
+ "bias": true,
+ "device": 0,
+ "use_gpu": false
+}
