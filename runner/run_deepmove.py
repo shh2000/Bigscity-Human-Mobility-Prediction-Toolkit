@@ -10,7 +10,7 @@ from models.deepmove import TrajPreLocalAttnLong
 
 class DeepMoveRunner(Runner):
 
-    def __init__(self, dir_path, config, model_name, model_config):
+    def __init__(self, dir_path, config):
         self.dir_path = dir_path
         with open(os.path.join(dir_path, 'config/run/deepMove.json'), 'r') as config_file:
             self.config = json.load(config_file)
@@ -19,7 +19,7 @@ class DeepMoveRunner(Runner):
                 for key in self.config:
                     if key in config:
                         self.config[key] = config[key]
-        self.model = TrajPreLocalAttnLong(self.dir_path, model_config)
+        self.model = None
     
     def train(self, train_data, eval_data):
         if self.config['use_cuda']:
@@ -70,6 +70,9 @@ class DeepMoveRunner(Runner):
                 remove_path = os.path.join(rt, name)
                 os.remove(remove_path)
         os.rmdir(self.dir_path + tmp_path)
+
+    def init_model(self, model_config):
+        self.model = TrajPreLocalAttnLong(self.dir_path, model_config)
 
     def load_cache(self, cache_name):
         self.model.load_state_dict(torch.load(cache_name))
