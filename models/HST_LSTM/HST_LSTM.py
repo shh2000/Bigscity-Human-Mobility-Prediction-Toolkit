@@ -7,8 +7,6 @@ from torch.nn import init
 from torch.nn.parameter import Parameter
 
 
-
-
 def st_lstm_cell(input_l, input_s, input_q, hidden, cell, w_ih, w_hh, w_s, w_q, b_ih, b_hh):
     """
     Proceed calculation of one step of STLSTM.
@@ -91,7 +89,7 @@ class STLSTMCell(nn.Module):
                 "input has inconsistent input_size: got {}, expected {}".format(
                     input.size(1), self.input_size))
 
-    def check_forward_hidden(self, input, hx, hidden_label=''):    # type:(Tensor, Tensor, str) -> None
+    def check_forward_hidden(self, input, hx, hidden_label=''):  # type:(Tensor, Tensor, str) -> None
         if input.size(0) != hx.size(0):
             raise RuntimeError(
                 "Input batch size {} doesn't match hidden{} batch size {}".format(
@@ -181,23 +179,36 @@ class STLSTM(nn.Module):
 
 
 class HSTLSTM(nn.Module):
+    '''
+        HST-LSTM模型
+        todo：由于论文未提供数据集，模型暂时由模拟数据训练。模拟数据 size=（batch,session,step,3) 默认已经做好time_slot, space_slot处理
+    '''
 
     def __init__(self, dirPath, config):
         super(HSTLSTM, self).__init__()
         with open(os.path.join(dirPath, "config/model/hst-lstm.json"), 'r') as f:
             parameters = json.load(f)
-        for key in parameters:
+        for key in parameters:  # 覆盖本地config
             if key in config:
                 parameters[key] = config[key]
         self.input_size = parameters['input_size']
         self.hidden_size = parameters['hidden_size']
         self.aoi_size = parameters['aoi_size']
+        self.temporal_slot_size = parameters['temporal_slot_size']
+        self.spacial_slot_size = parameters['spacial_slot_size']
         self.bias = parameters['bias']
         self.lr = parameters['lr']
         self.device = parameters['device']
         self.use_gpu = parameters['use_gpu']
+
+        # weights
         self.w_p = Parameter(torch.randn(self.hidden_size, self.aoi_size), requires_grad=True)
         self.b_p = Parameter(torch.randn(self.aoi_size), requires_grad=True)
+        self.temporal_embedding = nn.Embedding(self.temporal_slot_size, self.input_size)
+        self.spacial_embedding = nn.Embedding(self.spacial_slot_size, self.input_size)
+        self.aoi_embedding = nn.Embedding(self.aoi_size, self.input_size)
+
+        # layers
         self.soft_max = nn.Softmax(dim=1)
         self.encoding_stlstm = STLSTM(self.input_size, self.hidden_size, self.bias)
         self.context_lstm = nn.LSTM(self.hidden_size, self.hidden_size)
@@ -205,37 +216,49 @@ class HSTLSTM(nn.Module):
         if self.use_gpu:
             self.to(self.device)
 
-    def data_to_gpu(self, input_l, input_s, input_q, input_l_u, input_s_u, input_q_u, hc_e=None, hc_c=None):
-        input_l.to(self.device)
-        input_s.to(self.device)
-        input_q.to(self.device)
-        input_l_u.to(self.device)
-        input_s_u.to(self.device)
-        input_q_u.to(self.device)
+    def data_to_gpu(self, history_record, current_record, hc_e=None, hc_c=None):
+        history_record.to(self.device)
+        current_record.to(self.device)
         hc_c.to(self.device)
         hc_e.to(self.device)
 
-    def forward(self, input_l, input_s, input_q, input_l_u, input_s_u, input_q_u, hc_e=None, hc_c=None):
+    def embedding(self, data):  # size: (batch_size, session_size, step_size, 3)
+        aoi = data[:, :, :, 0]
+        space = data[:, :, :, 1]
+        time = data[:, :, :, 2]
+
+        # 线性插值
+        input_l = self.aoi_embedding(aoi)
+        input_s = self.spacial_embedding(space.float().floor().long()) * (space - space.float().floor().long()).unsqueeze(3).expand(-1, -1, -1, self.input_size) + \
+                  self.spacial_embedding(space.float().ceil().long()) * (space.float().ceil().long() - space).unsqueeze(3).expand(-1, -1, -1, self.input_size)
+        input_q = self.temporal_embedding(time.float().floor().long()) * (time - time.float().floor().long()).unsqueeze(3).expand(-1, -1, -1, self.input_size) + \
+                  self.temporal_embedding(time.float().ceil().long()) * (time.float().ceil().long() - time).unsqueeze(3).expand(-1, -1, -1, self.input_size)
+
+        return input_l, input_s, input_q
+
+    def forward(self, history_record, current_record, hc_e=None, hc_c=None):
         """
         Proceed forward propagation of HST-LSTM network.
-        :param input_l: input tensor of location embedding vector, shape (batch_size, session_size, step, input_size)
-        :param input_s: input tensor of spatial embedding vector, shape (batch_size, session_size, step, input_size)
-        :param input_q: input tensor of temporal embedding vector, shape (batch_size, session_size, step, input_size)
-        :param input_q_u: input tensor of unknown location embedding vector, shape (batch_size, step, input_size)
-        :param input_s_u: input tensor of unknown location embedding vector, shape (batch_size, step, input_size)
-        :param input_l_u: input tensor of unknown location embedding vector, shape (batch_size, step, input_size)
-        :param hc_e: initial tuple of hidden state and cell state for encoding st-lstm
-        :param hc_c: initial tuple of hidden state and cell state for context lstm
-        :return: hidden states and cell states produced by iterate through the steps.
+        :param history_record: 用户的历史记录, shape (batch_size, session_size, step, 3) 最后一维分别为aoi编号，space_slot, time_slot
+        :param current_record: 待预测的轨迹, shape (batch_size, step, 3)
+        :param hc_e: encoding st-lstm 的初始 hidden state 和 cell state 组成的元组
+        :param hc_c: context lstm 的初始 hidden state 和 cell state 组成的元组
+        :return: aoi概率分布  shape (batch_size, aoi_size)
         """
         if self.use_gpu:
-            self.data_to_gpu(input_l, input_s, input_q, input_l_u, input_s_u, input_q_u, hc_e, hc_c)
+            self.data_to_gpu(history_record, current_record, hc_e, hc_c)
+        input_l, input_s, input_q = self.embedding(history_record)
+        input_l_u, input_s_u, input_q_u = self.embedding(current_record.unsqueeze(1))  # u for unknown
+        input_l_u.squeeze_(1)
+        input_s_u.squeeze_(1)
+        input_q_u.squeeze_(1)
+
         output_hidden_e = []
         for session in range(input_l.size(1)):
             h, _ = self.encoding_stlstm(input_l[:, session, :, :].squeeze(1), input_s[:, session, :, :].squeeze(1),
                                         input_q[:, session, :, :].squeeze(1))
-            output_hidden_e.append(h)  # output_hidden_e.size = (session_size, batch_size, hidden_size)
-        input_context = torch.stack(output_hidden_e)  # size = (session_size, batch_size, hidden_size)
+            output_hidden_e.append(h)  # output_hidden_e.shape = (session_size, batch_size, hidden_size)
+        input_context = torch.stack(output_hidden_e)  # shape = (session_size, batch_size, hidden_size)
         _, hc = self.context_lstm(input_context, hc_c)
         output_context = (hc[0].squeeze(), torch.zeros(input_l.size(0), self.hidden_size))
         output_decoding, _ = self.decoding_stlstm(input_l_u, input_s_u, input_q_u, hc=output_context)
@@ -244,18 +267,3 @@ class HSTLSTM(nn.Module):
         prediction = torch.max(distribution, dim=1)
 
         return distribution, prediction
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-

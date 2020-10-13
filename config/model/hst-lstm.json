@@ -4,6 +4,8 @@
  "input_size": 10,
  "hidden_size": 10,
  "aoi_size": 10,
+ "temporal_slot_size": 20,
+ "spacial_slot_size": 20,
  "lr": 1e-4,
  "bias": true,
  "device": 0,
