@@ -13,8 +13,8 @@ class NextLocPred(Task):
         super(NextLocPred, self).__init__(dir_path, config)
         self.dataset = Dataset(self.dir_path)
         self.dataset_name = dataset_name
-        self.pre = self.getPre(pre_name, cache_name=dataset_name)
-        self.runner = self.getRunner(model_name)
+        self.pre = self.get_pre(pre_name, cache_name=dataset_name)
+        self.runner = self.get_runner(model_name)
         self.model_cache = self.dir_path + '/cache/model_cache/{}_{}_{}.m'.format(model_name, pre_name, dataset_name)
         # self.evaluate = evaluate(self.dir_path, self.config['evaluate']) TODO: 没有实装
         
@@ -41,13 +41,13 @@ class NextLocPred(Task):
         evaluator.evalute(res)
         '''
         
-    def getPre(self, pre_name, data, cache_name):
+    def get_pre(self, pre_name, data, cache_name):
         if pre_name == 'GenHistoryPre':
             return GenHistoryPre(self.dir_path, self.config['presentation'], cache_name)
         else:
             raise ValueError('no this presentation!')
     
-    def getRunner(self, model_name):
+    def get_runner(self, model_name):
         if model_name == 'deepMove':
             return DeepMoveRunner(self.dir_path, self.config['train'])
         else:
