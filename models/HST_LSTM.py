@@ -89,7 +89,7 @@ class STLSTMCell(nn.Module):
                 "input has inconsistent input_size: got {}, expected {}".format(
                     input.size(1), self.input_size))
 
-    def check_forward_hidden(self, input, hx, hidden_label=''):  # type:(Tensor, Tensor, str) -> None
+    def check_forward_hidden(self, input, hx, hidden_label=''):
         if input.size(0) != hx.size(0):
             raise RuntimeError(
                 "Input batch size {} doesn't match hidden{} batch size {}".format(
@@ -179,14 +179,14 @@ class STLSTM(nn.Module):
 
 
 class HSTLSTM(nn.Module):
-    '''
+    """
         HST-LSTM模型
         todo：由于论文未提供数据集，模型暂时由模拟数据训练。模拟数据 size=（batch,session,step,3) 默认已经做好time_slot, space_slot处理
-    '''
+    """
 
-    def __init__(self, dirPath, config):
+    def __init__(self, dir_path, config):
         super(HSTLSTM, self).__init__()
-        with open(os.path.join(dirPath, "config/model/hst-lstm.json"), 'r') as f:
+        with open(os.path.join(dir_path, "config/model/hst-lstm.json"), 'r') as f:
             parameters = json.load(f)
         for key in parameters:  # 覆盖本地config
             if key in config:
@@ -217,10 +217,12 @@ class HSTLSTM(nn.Module):
             self.to(self.device)
 
     def data_to_gpu(self, history_record, current_record, hc_e=None, hc_c=None):
-        history_record.to(self.device)
-        current_record.to(self.device)
-        hc_c.to(self.device)
-        hc_e.to(self.device)
+        history_record.cuda()
+        current_record.cuda()
+        if hc_e is not None:
+            hc_c.cuda()
+        if hc_c is not None:
+            hc_e.cuda()
 
     def embedding(self, data):  # size: (batch_size, session_size, step_size, 3)
         aoi = data[:, :, :, 0]
@@ -264,6 +266,6 @@ class HSTLSTM(nn.Module):
         output_decoding, _ = self.decoding_stlstm(input_l_u, input_s_u, input_q_u, hc=output_context)
 
         distribution = self.soft_max(torch.mm(output_decoding, self.w_p) + self.b_p)
-        prediction = torch.max(distribution, dim=1)
+        prediction = torch.max(distribution, dim=1)[1]
 
         return distribution, prediction

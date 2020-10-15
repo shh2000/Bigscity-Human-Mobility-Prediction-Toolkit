@@ -2,7 +2,7 @@
 class Runner(object):
 
     def __init__(self, dirPath, config):
-        self.dirPath = dirPath
+        self.dir_path = dirPath
         self.config = config
 
     def train(self, model, pre):
