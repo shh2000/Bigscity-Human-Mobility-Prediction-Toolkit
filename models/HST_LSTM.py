@@ -7,7 +7,7 @@ from torch.nn import init
 from torch.nn.parameter import Parameter
 
 
-def st_lstm_cell(input_l, input_s, input_q, hidden, cell, w_ih, w_hh, w_s, w_q, b_ih, b_hh):
+def st_lstm_cell(input_l, input_s, input_q, hidden, cell, w_ih, w_hh, w_s, w_q, b_ih, b_hh, use_gpu):
     """
     Proceed calculation of one step of STLSTM.
     :param input_l: input of location embedding, shape (batch_size, input_size)
@@ -23,6 +23,8 @@ def st_lstm_cell(input_l, input_s, input_q, hidden, cell, w_ih, w_hh, w_s, w_q, 
     :param b_hh: chunk of biases for process hidden state tensor, shape (4 * hidden_size)
     :return: hidden state and cell state of this step.
     """
+    if use_gpu:
+        cell = cell.cuda()
     gates = torch.mm(input_l, w_ih.t()) + torch.mm(hidden,
                                                    w_hh.t()) + b_ih + b_hh  # Shape (batch_size, 4 * hidden_size)
     in_gate, forget_gate, cell_gate, out_gate = gates.chunk(4, 1)
@@ -37,7 +39,7 @@ def st_lstm_cell(input_l, input_s, input_q, hidden, cell, w_ih, w_hh, w_s, w_q, 
     out_gate = torch.sigmoid(out_gate)
 
     next_cell = (forget_gate * cell) + (in_gate * cell_gate)
-    next_hidden = out_gate * torch.tanh(cell_gate)
+    next_hidden = out_gate * torch.tanh(next_cell)
 
     return next_hidden, next_cell
 
@@ -59,7 +61,7 @@ class STLSTMCell(nn.Module):
         >>>     output.append(hc[0])
     """
 
-    def __init__(self, input_size, hidden_size, bias=True):
+    def __init__(self, input_size, hidden_size, use_gpu, bias=True):
         """
         :param input_size: The number of expected features in the input `x`
         :param hidden_size: The number of features in the hidden state `h`
@@ -68,6 +70,7 @@ class STLSTMCell(nn.Module):
         super(STLSTMCell, self).__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
+        self.use_gpu = use_gpu
         self.bias = bias
 
         self.w_ih = Parameter(torch.randn(4 * hidden_size, input_size), requires_grad=True)
@@ -120,6 +123,8 @@ class STLSTMCell(nn.Module):
         if hc is None:
             zeros = torch.zeros(input_l.size(0), self.hidden_size, dtype=input_l.dtype, device=input_l.device)
             hc = (zeros, zeros)
+        if self.use_gpu:
+            hc = (hc[0].cuda(), hc[1].cuda())
         self.check_forward_hidden(input_l, hc[0], '[input_l, hidden]')
         self.check_forward_hidden(input_l, hc[1], '[input_l, cell]')
         self.check_forward_hidden(input_s, hc[0], '[input_s, hidden]')
@@ -129,7 +134,7 @@ class STLSTMCell(nn.Module):
         return st_lstm_cell(input_l=input_l, input_s=input_s, input_q=input_q,
                             hidden=hc[0], cell=hc[1],
                             w_ih=self.w_ih, w_hh=self.w_hh, w_s=self.w_s, w_q=self.w_q,
-                            b_ih=self.b_ih, b_hh=self.b_hh)
+                            b_ih=self.b_ih, b_hh=self.b_hh, use_gpu=self.use_gpu)
 
 
 class STLSTM(nn.Module):
@@ -145,7 +150,7 @@ class STLSTM(nn.Module):
         >>> hidden_out, cell_out = st_lstm(input_l, input_s, input_q)
     """
 
-    def __init__(self, input_size, hidden_size, bias=True):
+    def __init__(self, input_size, hidden_size, use_gpu, bias=True):
         """
         :param input_size: The number of expected features in the input `x`
         :param hidden_size: The number of features in the hidden state `h`
@@ -155,7 +160,8 @@ class STLSTM(nn.Module):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.bias = bias
-        self.cell = STLSTMCell(input_size, hidden_size, bias)
+        self.use_gpu = use_gpu
+        self.cell = STLSTMCell(input_size, hidden_size, use_gpu, bias)
 
     def check_forward_input(self, input_l, input_s, input_q):
         if not (input_l.size(1) == input_s.size(1) == input_q.size(1)):
@@ -176,6 +182,16 @@ class STLSTM(nn.Module):
         for step in range(input_l.size(1)):
             hc = self.cell(input_l[:, step, :], input_s[:, step, :], input_q[:, step, :], hc)
         return hc[0], hc[1]
+
+
+def data_to_gpu(history_record, current_record, hc_e=None, hc_c=None):
+    history_record = history_record.cuda()
+    current_record = current_record.cuda()
+    if hc_e is not None:
+        hc_e = hc_e.cuda()
+    if hc_c is not None:
+        hc_c = hc_c.cuda()
+    return history_record, current_record, hc_e, hc_c
 
 
 class HSTLSTM(nn.Module):
@@ -210,19 +226,9 @@ class HSTLSTM(nn.Module):
 
         # layers
         self.soft_max = nn.Softmax(dim=1)
-        self.encoding_stlstm = STLSTM(self.input_size, self.hidden_size, self.bias)
+        self.encoding_stlstm = STLSTM(self.input_size, self.hidden_size, self.use_gpu, self.bias)
         self.context_lstm = nn.LSTM(self.hidden_size, self.hidden_size)
-        self.decoding_stlstm = STLSTM(self.input_size, self.hidden_size, self.bias)
-        if self.use_gpu:
-            self.to(self.device)
-
-    def data_to_gpu(self, history_record, current_record, hc_e=None, hc_c=None):
-        history_record.cuda()
-        current_record.cuda()
-        if hc_e is not None:
-            hc_c.cuda()
-        if hc_c is not None:
-            hc_e.cuda()
+        self.decoding_stlstm = STLSTM(self.input_size, self.hidden_size, self.use_gpu, self.bias)
 
     def embedding(self, data):  # size: (batch_size, session_size, step_size, 3)
         aoi = data[:, :, :, 0]
@@ -248,7 +254,7 @@ class HSTLSTM(nn.Module):
         :return: aoi概率分布  shape (batch_size, aoi_size)
         """
         if self.use_gpu:
-            self.data_to_gpu(history_record, current_record, hc_e, hc_c)
+            history_record, current_record, hc_e, hc_c = data_to_gpu(history_record, current_record, hc_e, hc_c)
         input_l, input_s, input_q = self.embedding(history_record)
         input_l_u, input_s_u, input_q_u = self.embedding(current_record.unsqueeze(1))  # u for unknown
         input_l_u.squeeze_(1)

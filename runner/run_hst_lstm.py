@@ -24,8 +24,8 @@ class HSTLSTMRunner(Runner):
         :return:
         """
         if self.config["use_gpu"]:
-            model.to(torch.device(self.config["device"]))
-            pre.cuda()
+            model.to(self.config["device"])
+            pre = pre.cuda()
         optimizer = torch.optim.Adam(model.parameters(), self.config['lr'])
         loss_func = torch.nn.CrossEntropyLoss()
         data_set = TensorDataset(pre, pre[:, :, :, 0])  # y就是aoi数据
@@ -48,6 +48,6 @@ class HSTLSTMRunner(Runner):
 
     def predict(self, model, pre):  # 默认最后一个session是要预测的
         if self.config["use_gpu"]:
-            model.to(torch.device(self.config["device"]))
-            pre.cuda()
+            model.to(self.config["device"])
+            pre = pre.cuda()
         return model(pre[:, :-1, :, :], pre[:, -1, :, :])

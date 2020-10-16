@@ -8,7 +8,7 @@
  "temporal_slot_size": 10,
  "spacial_slot_size": 10,
  "epochs": 100,
- "lr": 1e-2,
+ "lr": 1e-3,
  "device": 0,
- "use_gpu": false
+ "use_gpu": true
 }
