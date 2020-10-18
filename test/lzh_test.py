@@ -1,7 +1,6 @@
-from evaluate import evaluate as lpem
+from evaluate import evaluate as epl
 
 if __name__ == '__main__':
-    Eval = lpem.Evaluate(r'D:\Users\12908\Documents\git\Bigscity-Human-Mobility-Prediction-Toolkit')
     data = '{' \
            '"uid1": { ' \
            '"trace_id1":' \
@@ -14,6 +13,7 @@ if __name__ == '__main__':
            '{ "loc_true": [0], "loc_pred": [[0.4, 0.5, 0.7]] }' \
            '}' \
            '}'
-    # Eval.evaluate()
-    Eval.evaluate(data=data, mode=['ACC', 'MAE', 'top-2', 'top-3'])
-    Eval.save_result('/runtimeFiles/evaluate')
+    var = epl.EvalPredLoc(r'D:\Users\12908\Documents\git\Bigscity-Human-Mobility-Prediction-Toolkit')
+    # var.evaluate()
+    var.evaluate(data=data, mode=['ACC', 'MAE', 'top-2', 'top-3'])
+    var.save_result('/runtimeFiles/evaluate')

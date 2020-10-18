@@ -4,9 +4,13 @@
 
 2020.9.30 更新：增加列表类型数据的评估
 
+2020.10.18更新：调整基类
+
 ## 文件组织格式
 
-|-- evaluate -- basic.py 评估模型
+|-- evaluate -- basic.py 评估基类
+
+​					  -- evaluate.py 评估类（继承基类）
 
 ​					  -- config.json 评估类的配置文件
 
@@ -23,15 +27,14 @@
 当需要进行位置预测评估时：
 
 1. 引入 `/evaluate` 目录下的 `evaluate.py` 文件。
-2. 创建 `Evaluate` 类。
+2. 创建 `EvalPredLoc` 类。
 3. 调用 `evaluate` 方法。
 4. 可参考 `/test/lzh_test.py` 文件。
 
 ```python
-from evaluate import evaluate as lpem
+from evaluate import evaluate as epl
 
 if __name__ == '__main__':
-    Eval = lpem.Evaluate(r'D:\Users\12908\Documents\git\Bigscity-Human-Mobility-Prediction-Toolkit')
     data = '{' \
            '"uid1": { ' \
            '"trace_id1":' \
@@ -44,9 +47,10 @@ if __name__ == '__main__':
            '{ "loc_true": [0], "loc_pred": [[0.4, 0.5, 0.7]] }' \
            '}' \
            '}'
-    # Eval.evaluate()
-    Eval.evaluate(data=data, mode=['ACC', 'MAE', 'top-2', 'top-3'])
-    Eval.save_result('/runtimeFiles/evaluate')
+    var = epl.EvalPredLoc(r'D:\Users\12908\Documents\git\Bigscity-Human-Mobility-Prediction-Toolkit')
+    # var.evaluate()
+    var.evaluate(data=data, mode=['ACC', 'MAE', 'top-2', 'top-3'])
+    var.save_result('/runtimeFiles/evaluate')
 ```
 
 ### 参数含义
@@ -65,15 +69,17 @@ if __name__ == '__main__':
 
 1. dir_path：给出整个项目工程的绝对路径。
 
-#### evaluate(data, config, mode)
+#### evaluate(self, data=None, config=None, mode=None)
 
 evaluate函数对应的参数含义。
 
 1. data：用户可选择传入数据进行评估，**json类型或者可转换为json的str类型**，也可以是列表类型，列表元素为分batch的评估数据，若不传入，则默认从config.json配置文件中读入待评估数据的路径进行评估。
-2. config：对应用户配置的个性化参数，对应global_config，可覆盖config配置文件中的参数。
-3. mode：用户选择**评估方法**，以列表形式传入，可不传入，从配置文件中读取。
+2. config：对应用户配置的个性化参数，对应 **global_config**，可覆盖config配置文件中的参数。
+3. mode：用户选择 **评估方法**，以列表形式传入，可不传入，从配置文件中读取。
 
-#### save_result(result_path)
+后两个参数的意义是考虑用户既可以通过配置文件设置评估参数，也可以直接传入评估方法，由于不是必须参数，所以可取舍，只是希望方便用户操作。
+
+#### save_result(self, result_path="")
 
 save_result函数对应的参数含义。
 

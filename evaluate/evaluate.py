@@ -4,21 +4,17 @@ import os
 import shutil
 import re
 
+from evaluate.basic import Evaluate
 
-class Evaluate(object):
+
+class EvalPredLoc(Evaluate):
 
     def __init__(self, dir_path):
         """
         Initialize the creation of the Evaluate Class
         :param dir_path: 项目工程的绝对路径
         """
-        self.dir_path = dir_path
-        try:
-            f = json.load(open(dir_path + '/evaluate/config.json'))
-        except Exception:
-            raise ValueError('评估类的配置文件路径无效')
-        else:
-            self.config = f
+        super().__init__(dir_path)
         # 从配置文件中读取相关参数
         self.all_mode = self.config['all_mode']
         self.mode_list = self.config['mode_list']
@@ -68,6 +64,23 @@ class Evaluate(object):
             for batch_data in t_data:
                 self.data = batch_data
         self.evaluate_data()
+
+    def save_result(self, result_path=""):
+        """
+        :param result_path: 相对路径，存放结果json
+        :return:
+        """
+        path = self.dir_path + result_path
+        if os.path.exists(path):
+            shutil.rmtree(path)
+        if not os.path.exists(path):
+            os.mkdir(path)
+        file = open(path + '/res.txt', 'w')
+        file.write(json.dumps(self.metrics))
+        file.write('\n')
+        file.write(json.dumps(self.trace_metrics))
+        file.close()
+        pass
 
     def evaluate_data(self):
         """
@@ -176,23 +189,6 @@ class Evaluate(object):
                     self.metrics[self.mode].append(avg_acc)
                 else:
                     self.trace_metrics[self.mode].append(avg_acc)
-
-    def save_result(self, result_path=""):
-        """
-        :param result_path: 相对路径，存放结果json
-        :return:
-        """
-        path = self.dir_path + result_path
-        if os.path.exists(path):
-            shutil.rmtree(path)
-        if not os.path.exists(path):
-            os.mkdir(path)
-        file = open(path + '/res.txt', 'w')
-        file.write(json.dumps(self.metrics))
-        file.write('\n')
-        file.write(json.dumps(self.trace_metrics))
-        file.close()
-        pass
 
     # 均方误差（Mean Square Error）
     @staticmethod
