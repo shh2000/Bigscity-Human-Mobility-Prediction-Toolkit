@@ -12,7 +12,7 @@ from utils.presentation_helper import encodeLoc, parseTime, calculateBaseTime, c
 class GenHistoryPre(Presentation):
 
     def __init__(self, dir_path, config, cache_name):
-        super(GenHistoryPre, self).__init__(dir_path)
+        self.dir_path = dir_path
         with open(os.path.join(dir_path, 'config/presentation/gen_history.json'), 'r') as config_file:
             self.config = json.load(config_file)
         # 全局 config 可以覆写 loc_config
@@ -20,7 +20,8 @@ class GenHistoryPre(Presentation):
         for key in self.config:
             if key in config:
                 self.config[key] = config[key]
-            parameters_str += '_' + str(self.config[key])
+            if key != "batch_size" and key != "num_workers":
+                parameters_str += '_' + str(self.config[key])
         self.cache_file_name = 'gen_history_{}{}.json'.format(cache_name, parameters_str)
         self.data = None
         self.pad_item = None
@@ -60,7 +61,8 @@ class GenHistoryPre(Presentation):
         res = {
             'loc_size': self.data['loc_size'],
             'tim_size': self.data['tim_size'],
-            'uid_size': self.data['uid_size']
+            'uid_size': self.data['uid_size'],
+            'target_len': self.config['pad_len'] - self.config['history_len']
         }
         return res
 
@@ -80,8 +82,8 @@ class GenHistoryPre(Presentation):
             # pad parameter
             loc_pad = transformed_data['loc_size']
             transformed_data['loc_size'] += 1
-            tim_pad = transformed_data['time_size']
-            transformed_data['time_size'] += 1
+            tim_pad = transformed_data['tim_size']
+            transformed_data['tim_size'] += 1
             self.pad_item = (loc_pad, tim_pad)
             self.data = transformed_data
             # 做 cache

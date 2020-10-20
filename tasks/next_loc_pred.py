@@ -10,12 +10,13 @@ from datasets.basic import Dataset
 class NextLocPred(Task):
 
     def __init__(self, dir_path, config, model_name, pre_name, dataset_name):
-        super(NextLocPred, self).__init__(dir_path, config)
+        self.dir_path = dir_path
+        self.config = config
         self.dataset = Dataset(self.dir_path)
         self.dataset_name = dataset_name
         self.pre = self.get_pre(pre_name, cache_name=dataset_name)
         self.runner = self.get_runner(model_name)
-        self.model_cache = self.dir_path + '/cache/model_cache/{}_{}_{}.m'.format(model_name, pre_name, dataset_name)
+        self.model_cache = os.path.join(self.dir_path, 'cache/model_cache/{}_{}_{}.m'.format(model_name, pre_name, dataset_name))
         # self.evaluate = evaluate(self.dir_path, self.config['evaluate']) TODO: 没有实装
         
     
@@ -41,7 +42,7 @@ class NextLocPred(Task):
         evaluator.evalute(res)
         '''
         
-    def get_pre(self, pre_name, data, cache_name):
+    def get_pre(self, pre_name, cache_name):
         if pre_name == 'GenHistoryPre':
             return GenHistoryPre(self.dir_path, self.config['presentation'], cache_name)
         else:

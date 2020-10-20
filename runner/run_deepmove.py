@@ -30,8 +30,8 @@ class DeepMoveRunner(Runner):
                             weight_decay=self.config['L2'])
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=self.config['lr_step'],
                                                  factor=self.config['lr_decay'], threshold= self.config['schedule_threshold'])
-        tmp_path = '/tmp/checkpoint/'
-        if not os.path.exits(self.dir_path + tmp_path):
+        tmp_path = 'tmp/checkpoint/'
+        if not os.path.exists(self.dir_path + tmp_path):
             os.makedirs(self.dir_path + tmp_path)
         metrics = {}
         metrics['train_loss'] = []
@@ -72,12 +72,18 @@ class DeepMoveRunner(Runner):
         os.rmdir(self.dir_path + tmp_path)
 
     def init_model(self, model_config):
-        self.model = TrajPreLocalAttnLong(self.dir_path, model_config)
+        if self.config['use_cuda']:
+            self.model = TrajPreLocalAttnLong(self.dir_path, model_config).cuda()
+        else:
+            self.model = TrajPreLocalAttnLong(self.dir_path, model_config)
 
     def load_cache(self, cache_name):
         self.model.load_state_dict(torch.load(cache_name))
     
     def save_cache(self, cache_name):
+        cache_dir = os.path.join(self.dir_path, 'cache/model_cache')
+        if not os.path.exists(os.path.join(cache_dir)):
+            os.makedirs(cache_dir)
         torch.save(self.model.state_dict(), cache_name)
 
     def predict(self, data):
@@ -107,17 +113,17 @@ class DeepMoveRunner(Runner):
                 if u not in evaluate_input:
                     evaluate_input[u] = {}
                 evaluate_input[u][s] = trace_input
-            yield evaluate_input
             cnt += 1
             if cnt % self.config['verbose'] == 0:
                 print('finish batch {}/{}'.format(cnt, test_total_batch))
+            yield evaluate_input
 
     def run(self, data_loader, model, use_cuda, optimizer, criterion, lr, clip, total_batch, verbose):
         model.train(True)
         total_loss = []
         cnt = 0
         loc_size = model.loc_size
-        for loc, tim, history_loc, history_tim, history_count, uid, target in data_loader:
+        for loc, tim, history_loc, history_tim, history_count, uid, target, session_id in data_loader:
             # use accumulating gradients
             # one batch, one step
             optimizer.zero_grad()
@@ -159,7 +165,7 @@ class DeepMoveRunner(Runner):
         total_acc = []
         cnt = 0
         loc_size = model.loc_size
-        for loc, tim, history_loc, history_tim, history_count, uid, target in data_loader:
+        for loc, tim, history_loc, history_tim, history_count, uid, target, session_id in data_loader:
             if use_cuda:
                 loc = torch.LongTensor(loc).cuda()
                 tim = torch.LongTensor(tim).cuda()
