@@ -7,7 +7,7 @@ class Presentation(object):
         config: 为外部传入的 global config，global config 将会覆盖 config 中的同名参数
         cache_name: 可以传递 datasetName，并不一定是最后的 cache 文件名，因为还需要将 pre 的参数也写到 cache 的文件名里面
         '''
-        self.dir_path = dir_path
+        raise NotImplementedError("Presentation not implemented")
 
     def get_data(self, mode):
         '''
@@ -18,7 +18,7 @@ class Presentation(object):
         }
         mode: train / test / eval
         '''
-        return None
+        raise NotImplementedError("Pre get data not implemented")
 
     def get_data_feature(self):
         '''
@@ -26,7 +26,7 @@ class Presentation(object):
         故该方法返回一个 dict，包含表示层能够提供的数据集特征
         该 feature 将会通过 global_config['model']['pre_feature'] 传递给 model 的 init 函数
         '''
-        return {}
+        raise NotImplementedError("Pre get data feature not implemented")
 
 
     def transfer_data(self, data, use_cache=True):
@@ -34,3 +34,4 @@ class Presentation(object):
         不再在 init 中传入原始数据集，而是单独做一个接口接受原始数据集。因为数据的加载是在 run 的时候，而模块的初始化是在 init 阶段
         数据加载之后，建议在这一步就做切片、过滤，get_data 只负责划分 eval/train/test 数据集，并返回即可
         '''
+        raise NotImplementedError("Pre transfer data not implemented")

@@ -11,4 +11,4 @@ class Model(nn.Module):
         dir_path: 用于加载模型的 config 获取超参
         config: 为外部传入的 global config，global config 将会覆盖 config 中的同名参数
         '''
-        super(Model, self).__init__()
+        raise NotImplementedError("Model not implemented")

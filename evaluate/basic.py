@@ -8,6 +8,7 @@ class Evaluate(object):
         dir_path: 用于寻找 loc_config，如果有必要做 loc_config 的话
         config: 用于传递 global_config
         '''
+        raise NotImplementedError("Evaluate init not implemented")
 
     def evaluate(self, data):
         '''
@@ -15,4 +16,4 @@ class Evaluate(object):
         for batch in data:
             获取到每一个 batch 的输出
         '''
-        pass
+        raise NotImplementedError("Evaluate not implemented")
