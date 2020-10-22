@@ -1,0 +1,14 @@
+{
+  "dim": 13,
+  "ww": 360,
+  "up_time": 560632.0,
+  "lw_time": 0,
+  "up_dist": 457.335,
+  "lw_dist": 0,
+  "reg_lambda": 0.1,
+  "batch_size": 2,
+  "num_epochs": 30,
+  "learning_rate": 0.001,
+  "momentum": 0.9,
+  "evaluate_every": 3
+}

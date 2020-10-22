@@ -4,6 +4,7 @@
     "GRU",
     "LSTM",
     "Deepmove",
-    "HST-LSTM"
+    "HST-LSTM",
+    "STRNN"
   ]
 }
