@@ -3,9 +3,8 @@ import json
 
 class Evaluate(object):
 
-    def __init__(self, dir_path, config):
+    def __init__(self, config):
         '''
-        dir_path: 用于寻找 loc_config，如果有必要做 loc_config 的话
         config: 用于传递 global_config
         '''
         raise NotImplementedError("Evaluate init not implemented")

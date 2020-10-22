@@ -10,9 +10,8 @@ from models.deepmove import TrajPreLocalAttnLong
 
 class DeepMoveRunner(Runner):
 
-    def __init__(self, dir_path, config):
-        self.dir_path = dir_path
-        with open(os.path.join(dir_path, 'config/run/deepMove.json'), 'r') as config_file:
+    def __init__(self, config):
+        with open(os.path.join('./config/run/deepMove.json'), 'r') as config_file:
             self.config = json.load(config_file)
             # 全局 config 可以覆写 loc_config
             if config:
@@ -20,6 +19,8 @@ class DeepMoveRunner(Runner):
                     if key in config:
                         self.config[key] = config[key]
         self.model = None
+        self.tmp_path = './tmp/checkpoint/'
+        self.cache_dir = './cache/model_cache'
     
     def train(self, train_data, eval_data):
         if self.config['use_cuda']:
@@ -30,9 +31,9 @@ class DeepMoveRunner(Runner):
                             weight_decay=self.config['L2'])
         scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=self.config['lr_step'],
                                                  factor=self.config['lr_decay'], threshold= self.config['schedule_threshold'])
-        tmp_path = 'tmp/checkpoint/'
-        if not os.path.exists(self.dir_path + tmp_path):
-            os.makedirs(self.dir_path + tmp_path)
+        
+        if not os.path.exists(self.tmp_path):
+            os.makedirs(self.tmp_path)
         metrics = {}
         metrics['train_loss'] = []
         metrics['accuracy'] = []
@@ -49,41 +50,40 @@ class DeepMoveRunner(Runner):
             print('==>Test Acc:{:.4f} Loss:{:.4f}'.format(avg_acc, avg_loss))
             metrics['accuracy'].append(avg_acc)
             save_name_tmp = 'ep_' + str(epoch) + '.m'
-            torch.save(self.model.state_dict(), self.dir_path + tmp_path + save_name_tmp)
+            torch.save(self.model.state_dict(), self.tmp_path + save_name_tmp)
             scheduler.step(avg_acc)
             lr_last = lr
             lr = optimizer.param_groups[0]['lr']
             if lr_last > lr:
                 load_epoch = np.argmax(metrics['accuracy'])
                 load_name_tmp = 'ep_' + str(load_epoch) + '.m'
-                self.model.load_state_dict(torch.load(self.dir_path + tmp_path + load_name_tmp))
+                self.model.load_state_dict(torch.load(self.tmp_path + load_name_tmp))
                 print('load epoch={} model state'.format(load_epoch))
             if lr <= 0.9 * 1e-5:
                 break
         best = np.argmax(metrics['accuracy'])  # 这个不是最好的一次吗？
         avg_acc = metrics['accuracy'][best]
         load_name_tmp = 'ep_' + str(best) + '.m'
-        self.model.load_state_dict(torch.load(self.dir_path + tmp_path + load_name_tmp))
+        self.model.load_state_dict(torch.load(self.tmp_path + load_name_tmp))
         # 删除之前创建的临时文件夹
-        for rt, dirs, files in os.walk(self.dir_path + tmp_path):
+        for rt, dirs, files in os.walk(self.tmp_path):
             for name in files:
                 remove_path = os.path.join(rt, name)
                 os.remove(remove_path)
-        os.rmdir(self.dir_path + tmp_path)
+        os.rmdir(self.tmp_path)
 
     def init_model(self, model_config):
         if self.config['use_cuda']:
-            self.model = TrajPreLocalAttnLong(self.dir_path, model_config).cuda()
+            self.model = TrajPreLocalAttnLong(model_config).cuda()
         else:
-            self.model = TrajPreLocalAttnLong(self.dir_path, model_config)
+            self.model = TrajPreLocalAttnLong(model_config)
 
     def load_cache(self, cache_name):
         self.model.load_state_dict(torch.load(cache_name))
     
     def save_cache(self, cache_name):
-        cache_dir = os.path.join(self.dir_path, 'cache/model_cache')
-        if not os.path.exists(os.path.join(cache_dir)):
-            os.makedirs(cache_dir)
+        if not os.path.exists(self.cache_dir):
+            os.makedirs(self.cache_dir)
         torch.save(self.model.state_dict(), cache_name)
 
     def predict(self, data):

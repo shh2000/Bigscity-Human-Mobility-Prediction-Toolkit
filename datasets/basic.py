@@ -3,12 +3,10 @@ import json
 
 class Dataset(object):
     config = {}
-    dir_path = ''
 
-    def __init__(self, dir_path):
-        self.dir_path = dir_path
+    def __init__(self):
         try:
-            f = json.load(open(dir_path + '/datasets/data/config.json'))
+            f = json.load(open('./datasets/data/config.json'))
         except:
             raise ValueError('config.dir_path is wrong')
         else:
@@ -17,7 +15,7 @@ class Dataset(object):
     def load(self, name='format'):
         if name in self.config.keys():
             if self.config[name] == 'local':
-                f = json.load(open(self.dir_path + '/datasets/data/' + name + '.json'))
+                f = json.load(open('./datasets/data/' + name + '.json'))
                 return f
             else:
                 pass

@@ -1,9 +1,8 @@
 
 class Presentation(object):
 
-    def __init__(self, dir_path, config, cache_name):
+    def __init__(self, config, cache_name):
         '''
-        dir_path: 用于加载表示层的 config 获取超参
         config: 为外部传入的 global config，global config 将会覆盖 config 中的同名参数
         cache_name: 可以传递 datasetName，并不一定是最后的 cache 文件名，因为还需要将 pre 的参数也写到 cache 的文件名里面
         '''

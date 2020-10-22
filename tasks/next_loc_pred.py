@@ -9,15 +9,14 @@ from datasets.basic import Dataset
 
 class NextLocPred(Task):
 
-    def __init__(self, dir_path, config, model_name, pre_name, dataset_name):
-        self.dir_path = dir_path
+    def __init__(self, config, model_name, pre_name, dataset_name):
         self.config = config
-        self.dataset = Dataset(self.dir_path)
+        self.dataset = Dataset()
         self.dataset_name = dataset_name
         self.pre = self.get_pre(pre_name, cache_name=dataset_name)
         self.runner = self.get_runner(model_name)
-        self.model_cache = os.path.join(self.dir_path, 'cache/model_cache/{}_{}_{}.m'.format(model_name, pre_name, dataset_name))
-        # self.evaluate = evaluate(self.dir_path, self.config['evaluate']) TODO: 没有实装
+        self.model_cache = './cache/model_cache/{}_{}_{}.m'.format(model_name, pre_name, dataset_name)
+        # self.evaluate = evaluate(self.config['evaluate']) TODO: 没有实装
         
     
     def run(self, train):
@@ -44,12 +43,12 @@ class NextLocPred(Task):
         
     def get_pre(self, pre_name, cache_name):
         if pre_name == 'GenHistoryPre':
-            return GenHistoryPre(self.dir_path, self.config['presentation'], cache_name)
+            return GenHistoryPre(self.config['presentation'], cache_name)
         else:
             raise ValueError('no this presentation!')
     
     def get_runner(self, model_name):
         if model_name == 'deepMove':
-            return DeepMoveRunner(self.dir_path, self.config['train'])
+            return DeepMoveRunner(self.config['train'])
         else:
             raise ValueError('no this model!')

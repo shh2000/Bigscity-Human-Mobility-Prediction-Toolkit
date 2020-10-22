@@ -11,9 +11,8 @@ from utils.presentation_helper import encodeLoc, parseTime, calculateBaseTime, c
 
 class GenHistoryPre(Presentation):
 
-    def __init__(self, dir_path, config, cache_name):
-        self.dir_path = dir_path
-        with open(os.path.join(dir_path, 'config/presentation/gen_history.json'), 'r') as config_file:
+    def __init__(self, config, cache_name):
+        with open('./config/presentation/gen_history.json', 'r') as config_file:
             self.config = json.load(config_file)
         # 全局 config 可以覆写 loc_config
         parameters_str = ''
@@ -22,7 +21,8 @@ class GenHistoryPre(Presentation):
                 self.config[key] = config[key]
             if key != "batch_size" and key != "num_workers":
                 parameters_str += '_' + str(self.config[key])
-        self.cache_file_name = 'gen_history_{}{}.json'.format(cache_name, parameters_str)
+        self.cache_file_name = './cache/pre_cache/' + 'gen_history_{}{}.json'.format(cache_name, parameters_str)
+        self.cache_file_folder = './cache/pre_cache/'
         self.data = None
         self.pad_item = None
 
@@ -67,9 +67,9 @@ class GenHistoryPre(Presentation):
         return res
 
     def transfer_data(self, data, use_cache=True):
-        if use_cache and os.path.exists(os.path.join(self.dir_path, 'cache/pre_cache/', self.cache_file_name)):
+        if use_cache and os.path.exists(self.cache_file_name):
             # load cache
-            f = open(os.path.join(self.dir_path, 'cache/pre_cache/', self.cache_file_name), 'r')
+            f = open(self.cache_file_name, 'r')
             self.data = json.load(f)
             loc_pad = self.data['loc_size'] - 1
             tim_pad = self.data['tim_size'] - 1
@@ -87,9 +87,9 @@ class GenHistoryPre(Presentation):
             self.pad_item = (loc_pad, tim_pad)
             self.data = transformed_data
             # 做 cache
-            if not os.path.exists(os.path.join(self.dir_path, 'cache/pre_cache')):
-                os.makedirs(os.path.join(self.dir_path, 'cache/pre_cache'))
-            with open(os.path.join(self.dir_path, 'cache/pre_cache/', self.cache_file_name), 'w') as f:
+            if not os.path.exists(self.cache_file_folder):
+                os.makedirs(self.cache_file_folder)
+            with open(self.cache_file_name, 'w') as f:
                 json.dump(transformed_data, f)
 
     def cutter_filter(self, data):
