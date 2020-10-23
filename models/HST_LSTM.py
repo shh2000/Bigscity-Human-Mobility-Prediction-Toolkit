@@ -179,9 +179,15 @@ class STLSTM(nn.Module):
         :return: hidden states and cell states produced by iterate through the steps.
         """
         self.check_forward_input(input_l, input_s, input_q)
+        h_list = []
+        c_list = []
         for step in range(input_l.size(1)):
             hc = self.cell(input_l[:, step, :], input_s[:, step, :], input_q[:, step, :], hc)
-        return hc[0], hc[1]
+            h_list.append(hc[0])
+            c_list.append(hc[1])
+        h = torch.stack(h_list, dim=1)
+        c = torch.stack(c_list, dim=1)
+        return h, c
 
 
 def data_to_gpu(history_record, current_record, hc_e=None, hc_c=None):
@@ -251,7 +257,8 @@ class HSTLSTM(nn.Module):
         :param current_record: 待预测的轨迹, shape (batch_size, step, 3)
         :param hc_e: encoding st-lstm 的初始 hidden state 和 cell state 组成的元组
         :param hc_c: context lstm 的初始 hidden state 和 cell state 组成的元组
-        :return: aoi概率分布  shape (batch_size, aoi_size)
+        :return: aoi概率分布 distribution  shape (batch_size, step, aoi_size)
+                 预测结果    prediction    shape (batch_size, step)
         """
         if self.use_gpu:
             history_record, current_record, hc_e, hc_c = data_to_gpu(history_record, current_record, hc_e, hc_c)
@@ -263,15 +270,16 @@ class HSTLSTM(nn.Module):
 
         output_hidden_e = []
         for session in range(input_l.size(1)):
-            h, _ = self.encoding_stlstm(input_l[:, session, :, :].squeeze(1), input_s[:, session, :, :].squeeze(1),
-                                        input_q[:, session, :, :].squeeze(1))
-            output_hidden_e.append(h)  # output_hidden_e.shape = (session_size, batch_size, hidden_size)
+            h, _ = self.encoding_stlstm(input_l[:, session, :, :], input_s[:, session, :, :],
+                                        input_q[:, session, :, :])
+
+            output_hidden_e.append(h[:, -1, :])  # output_hidden_e.shape = (session_size, batch_size, hidden_size)
         input_context = torch.stack(output_hidden_e)  # shape = (session_size, batch_size, hidden_size)
         _, hc = self.context_lstm(input_context, hc_c)
         output_context = (hc[0].squeeze(), torch.zeros(input_l.size(0), self.hidden_size))
         output_decoding, _ = self.decoding_stlstm(input_l_u, input_s_u, input_q_u, hc=output_context)
 
-        distribution = self.soft_max(torch.mm(output_decoding, self.w_p) + self.b_p)
-        prediction = torch.max(distribution, dim=1)[1]
+        distribution = self.soft_max(torch.matmul(output_decoding, self.w_p) + self.b_p)  # shape = (batch_size, step, aoi_size)
+        prediction = torch.max(distribution, dim=2)[1]  # shape = (batch_size, step)
 
         return distribution, prediction

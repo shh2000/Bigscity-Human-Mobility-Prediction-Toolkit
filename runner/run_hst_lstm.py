@@ -33,18 +33,18 @@ class HSTLSTMRunner(Runner):
 
         for epoch in range(self.config['epochs']):
             current_loss = 0.
+            current_acc = 0.
             for _, (batch_x, batch_y) in enumerate(data_loader):
-                for session in range(batch_x.size(1)):
-                    for step in range(1, batch_x.size(2)):
-                        x = torch.cat((batch_x[:, :session, :, :], batch_x[:, session + 1:, :, :]),
-                                      dim=1)  # 把第session个记录剔掉
-                        distribution, prediction = model(x, batch_x[:, session, :step, :])
-                        optimizer.zero_grad()
-                        loss = loss_func(distribution, batch_y[:, session, step])
-                        loss.backward()
-                        current_loss += loss.sum().detach().to("cpu").item()
-                        optimizer.step()
-            print("epoch{} : {}".format(epoch, current_loss))
+                for session in range(1, batch_x.size(1)):
+                    x = batch_x[:, :session, :, :]
+                    distribution, prediction = model(x, batch_x[:, session, :, :])
+                    optimizer.zero_grad()
+                    loss = loss_func(distribution[:, :-1, :].flatten(0, 1), batch_y[:, session, 1:].flatten())
+                    loss.backward()
+                    current_loss += loss.sum().detach().to("cpu").item()
+                    current_acc = prediction[:, :-1].eq(batch_y[:, session, 1:]).detach().to("cpu").sum().item()/prediction.numel()
+                    optimizer.step()
+            print("epoch{} : loss: {}       acc: {}".format(epoch, current_loss, current_acc))
 
     def predict(self, model, pre):  # 默认最后一个session是要预测的
         if self.config["use_gpu"]:
