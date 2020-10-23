@@ -2,22 +2,17 @@ import json
 
 
 class Evaluate(object):
-    dirPath = ''
-    config = {}
 
-    def __init__(self, dirPath):
-        self.dirPath = dirPath
-        try:
-            f = json.load(open(dirPath + '/datasets/config.json'))
-        except:
-            raise ValueError('config.dirPath is wrong')
-        else:
-            self.config = f
+    def __init__(self, config):
+        '''
+        config: 用于传递 global_config
+        '''
+        raise NotImplementedError("Evaluate init not implemented")
 
-    def evaluate(self, index='MSE', resultPath=''):
-        """
-        :param index: 指标，如”MSE“，”MAPE“
-        :param resultPath: 相对路径，存放结果json，格式同老库
-        :return: 对应指标的结果
-        """
-        pass
+    def evaluate(self, data):
+        '''
+        data: 是根据 yield 机制生成的一个迭代类可以通过（对于没有做 batch 的模型的话，传一个 list 就行）
+        for batch in data:
+            获取到每一个 batch 的输出
+        '''
+        raise NotImplementedError("Evaluate not implemented")
