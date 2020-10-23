@@ -6,19 +6,19 @@
 
 2020.10.18更新：调整基类
 
+2020.10.23更新：更新文件结构，修复bug
+
 ## 文件组织格式
 
-|-- evaluate -- basic.py 评估基类
-
-​					  -- evaluate.py 评估类（继承基类）
-
-​					  -- config.json 评估类的配置文件
-
-​					  -- readme.md 评估部分说明文档
-
-|-- runtimeFiles -- evaluate -- res.txt 评估结果（待整理格式）
-
-|-- test -- lzh_test.py	运行样例/测试方法
+| 文件目录                               | 作用                   |
+| -------------------------------------- | ---------------------- |
+| dir_path/evaluate/eval_next_loc.py     | 评估下一跳位置预测     |
+| dir_path/evaluate/eval_funcs.py        | 实现各种评估方法       |
+| dir_path/evaluate/utils.py             | 功能/工具型函数        |
+| dir_path/evaluate/config.json          | 评估类默认参数         |
+| dir_path/evaluate/readme.md            | 评估部分说明文档       |
+| dir_path/runtimeFiles/evaluate/res.txt | 评估结果（待整理格式） |
+| dir_path/test/lzh_test                 | 运行样例/测试方法      |
 
 ## 使用说明
 
@@ -26,13 +26,13 @@
 
 当需要进行位置预测评估时：
 
-1. 引入 `/evaluate` 目录下的 `evaluate.py` 文件。
-2. 创建 `EvalPredLoc` 类。
+1. 引入 `/evaluate` 目录下的 `eval_next_loc.py` 文件。
+2. 创建 `Evaluate` 类。
 3. 调用 `evaluate` 方法。
-4. 可参考 `/test/lzh_test.py` 文件。
+4. 可参考 `/test`目录下的 `lzh_test.py` 文件。
 
 ```python
-from evaluate import evaluate as epl
+from evaluate import eval_next_loc as enl
 
 if __name__ == '__main__':
     data = '{' \
@@ -47,9 +47,23 @@ if __name__ == '__main__':
            '{ "loc_true": [0], "loc_pred": [[0.4, 0.5, 0.7]] }' \
            '}' \
            '}'
-    var = epl.EvalPredLoc(r'D:\Users\12908\Documents\git\Bigscity-Human-Mobility-Prediction-Toolkit')
-    # var.evaluate()
-    var.evaluate(data=data, mode=['ACC', 'MAE', 'top-2', 'top-3'])
+    """data2 = '{' \
+           '"uid1": { ' \
+           '"trace_id1":' \
+           '{ "loc_true": [1], "loc_pred": [[0.01, 0.1, 0.8]] }, ' \
+           '"trace_id2":' \
+           '{ "loc_true": [2], "loc_pred": [[0.2, 0.13, 0.08]] } ' \
+           '},' \
+           '"uid2": { ' \
+           '"trace_id1":' \
+           '{ "loc_true": [0], "loc_pred": [[0.4, 0.5, 0.7]] }' \
+           '}' \
+           '}'"""
+    config = {
+        'data_type': 'DeepMove'
+    }
+    var = enl.Evaluate(r'D:\Users\12908\Documents\git\Bigscity-Human-Mobility-Prediction-Toolkit')
+    var.evaluate(data=data, config=config, mode=['ACC', 'MAE', 'top-2', 'top-3'])
     var.save_result('/runtimeFiles/evaluate')
 ```
 
@@ -57,11 +71,13 @@ if __name__ == '__main__':
 
 #### config.json
 
-1. all_mode：所有支持的评估方法
-2. mode_list：对模型采用的评估方法，以列表形式。
-3. data_path：若采用从文件中读取数据进行评估，则该参数必填，为待评估文件的**绝对路径**。
-4. data_type：评估模型的数据类型，如对DeepMove模型的输出需要进行**预处理**。
-5. output_gate：控制是否在评估过程中输出评估信息，可选项**"True"**或**"False"**。
+评估类的默认配置。
+
+2. mode_list：所有支持的评估方法。
+2. mode：评估方法，以列表形式。
+3. output_gate：控制是否在评估过程中输出评估信息，可选项**"true"**或**"false"**。
+4. data_path：若采用从文件中读取数据进行评估，则该参数为待评估文件的**绝对路径**。
+5. data_type：评估模型的数据类型，因为我们对某些如DeepMove这样的模型的输出需要进行**预处理**。
 
 #### __init__(dir_path)
 
@@ -73,11 +89,11 @@ if __name__ == '__main__':
 
 evaluate函数对应的参数含义。
 
-1. data：用户可选择传入数据进行评估，**json类型或者可转换为json的str类型**，也可以是列表类型，列表元素为分batch的评估数据，若不传入，则默认从config.json配置文件中读入待评估数据的路径进行评估。
-2. config：对应用户配置的个性化参数，对应 **global_config**，可覆盖config配置文件中的参数。
-3. mode：用户选择 **评估方法**，以列表形式传入，可不传入，从配置文件中读取。
+1. data：用户可选择传入数据进行评估，**json类型或者可转换为json的str类型**，也可以是列表类型的数据（列表元素为分batch的评估数据）；若不传入，则选择从文件中读取数据进行评估；若文件路径也没有可评估数据，则抛出异常。
+2. config：对应用户配置的个性化参数，对应 **global_config**，可覆盖config配置文件中的默认参数。
+3. mode：用户选择 **评估方法**，以列表形式传入；若不传入，则检查 **config** 参数中是否包含评估方法；若前两者都无，则默认采用 **ACC** 评估方式。
 
-后两个参数的意义是考虑用户既可以通过配置文件设置评估参数，也可以直接传入评估方法，由于不是必须参数，所以可取舍，只是希望方便用户操作。
+mode参数的意义是考虑用户既可以通过配置文件设置评估参数，也可以直接传入评估方法，由于不是必须参数，所以可取舍，只是希望方便用户操作。
 
 #### save_result(self, result_path="")
 
