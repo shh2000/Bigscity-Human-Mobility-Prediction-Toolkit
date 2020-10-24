@@ -21,6 +21,7 @@ def st_lstm_cell(input_l, input_s, input_q, hidden, cell, w_ih, w_hh, w_s, w_q, 
     :param w_q: chunk of weights for process input of temporal embedding, shape (3 * hidden_size, input_size)
     :param b_ih: chunk of biases for process input tensor, shape (4 * hidden_size)
     :param b_hh: chunk of biases for process hidden state tensor, shape (4 * hidden_size)
+    :param use_gpu: use gpu or not
     :return: hidden state and cell state of this step.
     """
     if use_gpu:
@@ -206,13 +207,14 @@ class HSTLSTM(nn.Module):
         todo：由于论文未提供数据集，模型暂时由模拟数据训练。模拟数据 size=（batch,session,step,3) 默认已经做好time_slot, space_slot处理
     """
 
-    def __init__(self, dir_path, config):
+    def __init__(self, config):
         super(HSTLSTM, self).__init__()
-        with open(os.path.join(dir_path, "config/model/hst-lstm.json"), 'r') as f:
+        with open(os.path.join(config["dir_path"], "config/model/hst-lstm.json"), 'r') as f:
             parameters = json.load(f)
         for key in parameters:  # 覆盖本地config
             if key in config:
                 parameters[key] = config[key]
+
         self.input_size = parameters['input_size']
         self.hidden_size = parameters['hidden_size']
         self.aoi_size = parameters['aoi_size']
@@ -276,7 +278,7 @@ class HSTLSTM(nn.Module):
             output_hidden_e.append(h[:, -1, :])  # output_hidden_e.shape = (session_size, batch_size, hidden_size)
         input_context = torch.stack(output_hidden_e)  # shape = (session_size, batch_size, hidden_size)
         _, hc = self.context_lstm(input_context, hc_c)
-        output_context = (hc[0].squeeze(), torch.zeros(input_l.size(0), self.hidden_size))
+        output_context = (hc[0][-1, :, :], torch.zeros(input_l.size(0), self.hidden_size))
         output_decoding, _ = self.decoding_stlstm(input_l_u, input_s_u, input_q_u, hc=output_context)
 
         distribution = self.soft_max(torch.matmul(output_decoding, self.w_p) + self.b_p)  # shape = (batch_size, step, aoi_size)
