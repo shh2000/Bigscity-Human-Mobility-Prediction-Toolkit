@@ -18,7 +18,7 @@ class EvaluateNextLoc:
         Initialize the creation of the Evaluate Class
         :param config: 用于传递 global_config
         """
-        self.config_path = '../evaluate/config.json'
+        self.config_path = '../config/evaluate/eval_next_loc.json'
         try:
             with open(self.config_path) as f:
                 self.config = json.load(f)
