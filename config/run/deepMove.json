@@ -4,6 +4,8 @@
     "L2": 1e-5, 
     "max_epoch": 2,
     "lr_step": 3,
+    "lr_decay": 0.1,
+    "clip": 5.0,
     "schedule_threshold": 1e-3,
     "verbose": 10
 }

@@ -1,6 +1,8 @@
 /venv
 /.idea
-/runtimeFiles/*
+/tmp/*
+/cache/*
 /.vscode
 */__pycache__
 /global_config.json
+/datasets/data

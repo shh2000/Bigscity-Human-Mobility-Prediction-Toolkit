@@ -162,9 +162,9 @@ class TrajPreAttnAvgLongUser(nn.Module):
 class TrajPreLocalAttnLong(nn.Module):
     """rnn model with long-term history attention"""
 
-    def __init__(self, dirPath, config):
+    def __init__(self, config):
         super(TrajPreLocalAttnLong, self).__init__()
-        config_file = open(dirPath + 'config/model/deepMove.json', 'r')
+        config_file = open('./config/model/deepMove.json', 'r')
         parameters = json.load(config_file)
         config_file.close()
         # 全局 config 可以覆写 loc_config
