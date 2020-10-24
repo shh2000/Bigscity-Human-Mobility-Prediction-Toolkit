@@ -47,24 +47,30 @@ if __name__ == '__main__':
            '{ "loc_true": [0], "loc_pred": [[0.4, 0.5, 0.7]] }' \
            '}' \
            '}'
-    """data2 = '{' \
-           '"uid1": { ' \
-           '"trace_id1":' \
-           '{ "loc_true": [1], "loc_pred": [[0.01, 0.1, 0.8]] }, ' \
-           '"trace_id2":' \
-           '{ "loc_true": [2], "loc_pred": [[0.2, 0.13, 0.08]] } ' \
-           '},' \
-           '"uid2": { ' \
-           '"trace_id1":' \
-           '{ "loc_true": [0], "loc_pred": [[0.4, 0.5, 0.7]] }' \
-           '}' \
-           '}'"""
+    data2 = '{' \
+            '"uid1": { ' \
+            '"trace_id1":' \
+            '{ "loc_true": [1], "loc_pred": [[0.01, 0.1, 0.8]] }, ' \
+            '"trace_id2":' \
+            '{ "loc_true": [2], "loc_pred": [[0.2, 0.13, 0.08]] } ' \
+            '},' \
+            '"uid2": { ' \
+            '"trace_id1":' \
+            '{ "loc_true": [0], "loc_pred": [[0.4, 0.5, 0.7]] }' \
+            '}' \
+            '}'
     config = {
-        'data_type': 'DeepMove'
+        'data_type': 'DeepMove',
+        'mode': ['ACC', 'MAE', 'top-2', 'top-3']
     }
-    var = enl.Evaluate(r'D:\Users\12908\Documents\git\Bigscity-Human-Mobility-Prediction-Toolkit')
-    var.evaluate(data=data, config=config, mode=['ACC', 'MAE', 'top-2', 'top-3'])
-    var.save_result('/runtimeFiles/evaluate')
+    var = enl.EvaluateNextLoc(config)
+    # 正常写法
+    var.evaluate(data=data)
+    # iterator/yield 写法
+    """data_list = [data, data2]
+    for data in data_list:
+        var.evaluate(data)"""
+    var.save_result(r'D:\Users\12908\Documents\git\Bigscity-Human-Mobility-Prediction-Toolkit/runtimeFiles/evaluate')
 ```
 
 ### 参数含义
@@ -79,27 +85,23 @@ if __name__ == '__main__':
 4. data_path：若采用从文件中读取数据进行评估，则该参数为待评估文件的**绝对路径**。
 5. data_type：评估模型的数据类型，因为我们对某些如DeepMove这样的模型的输出需要进行**预处理**。
 
-#### __init__(dir_path)
+#### __init__(config)
 
 初始化函数的参数意义。
 
-1. dir_path：给出整个项目工程的绝对路径。
+1. config：用于传递 global_config。
 
-#### evaluate(self, data=None, config=None, mode=None)
+#### evaluate(self, data=None)
 
 evaluate函数对应的参数含义。
 
 1. data：用户可选择传入数据进行评估，**json类型或者可转换为json的str类型**，也可以是列表类型的数据（列表元素为分batch的评估数据）；若不传入，则选择从文件中读取数据进行评估；若文件路径也没有可评估数据，则抛出异常。
-2. config：对应用户配置的个性化参数，对应 **global_config**，可覆盖config配置文件中的默认参数。
-3. mode：用户选择 **评估方法**，以列表形式传入；若不传入，则检查 **config** 参数中是否包含评估方法；若前两者都无，则默认采用 **ACC** 评估方式。
-
-mode参数的意义是考虑用户既可以通过配置文件设置评估参数，也可以直接传入评估方法，由于不是必须参数，所以可取舍，只是希望方便用户操作。
 
 #### save_result(self, result_path="")
 
 save_result函数对应的参数含义。
 
-1. result_path：评估结束后将评估结果保存到文件中，给出文件的相对路径（相对于项目工程）。
+1. result_path：评估结束后将评估结果保存到文件中，给出文件的绝对路径。
 
 ## 数据格式说明
 

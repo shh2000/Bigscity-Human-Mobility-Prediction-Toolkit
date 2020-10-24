@@ -3,33 +3,34 @@ import numpy as np
 import os
 import shutil
 import re
+import sys
 
 from evaluate.eval_funcs import ACC, top_k, SMAPE, RMSE, MAPE, MARE, MSE, MAE
 from evaluate.utils import output, transfer_data
 
+sys.path.append('..')
 
-class Evaluate:
 
-    def __init__(self, dir_path):
+class EvaluateNextLoc:
+
+    def __init__(self, config):
         """
         Initialize the creation of the Evaluate Class
-        :param dir_path: 项目工程的绝对路径
+        :param config: 用于传递 global_config
         """
-        self.dir_path = dir_path
-        self.base_path = dir_path + '/evaluate'
-        self.config_path = dir_path + '/evaluate/config.json'
+        self.config_path = '../evaluate/config.json'
         try:
             with open(self.config_path) as f:
                 self.config = json.load(f)
         except Exception:
             raise ValueError('评估类的配置文件路径无效')
         # 从配置文件中读取相关参数
-        self.load_config(self.config)
         self.output_switch = self.config['output_switch'].lower() == 'true'
         self.mode_list = self.config['mode_list']
         self.data_path = self.config['data_path']
         self.data_type = self.config['data_type']
         self.mode = self.config['mode']
+        self.load_config(config)
         # 初始化类的内部变量
         self.topK = 1
         self.maxK = 1
@@ -37,6 +38,8 @@ class Evaluate:
         self.data = None
         self.metrics = {}
         self.trace_metrics = {}
+        # 检查是否有不支持的配置
+        self.check_config()
 
     def load_config(self, config):
         """
@@ -55,26 +58,8 @@ class Evaluate:
         if 'mode' in config.keys():
             self.mode = config['mode']
 
-    def evaluate(self, data=None, config=None, mode=None):
-        """
-        The entrance of evaluation (user-oriented)
-        :param data: 待评估数据, 可以直接是dict类型或者str形式的dict类型，也可以是列表类型(分batch)
-        :param config: 用户传进来的个性化参数，更新参数
-        :param mode: 指标，列表形式, 如 [MSE“，”MAPE“], 默认从配置文件中读入
-        :return: 对应指标的结果
-        """
-        if config is not None:
-            self.load_config(config)
-        if mode is not None:
-            self.mode = mode
-        if data is not None:
-            self.data = data
-        else:
-            try:
-                with open(self.data_path) as f:
-                    self.data = json.load(f)
-            except Exception:
-                raise ValueError('待评估数据的路径无效')
+    def check_config(self):
+        # check mode
         for mode in self.mode:
             if mode in self.mode_list:
                 self.metrics[mode] = []
@@ -86,6 +71,21 @@ class Evaluate:
                 self.maxK = k if k > self.maxK else self.maxK
             else:
                 raise ValueError("{} 是不支持的评估方法".format(mode))
+
+    def evaluate(self, data=None):
+        """
+        The entrance of evaluation (user-oriented)
+        :param data: 待评估数据, 可以直接是dict类型或者str形式的dict类型，也可以是列表类型(分batch)
+        :return: 对应指标的结果
+        """
+        if data is not None:
+            self.data = data
+        else:
+            try:
+                with open(self.data_path) as f:
+                    self.data = json.load(f)
+            except Exception:
+                raise ValueError('待评估数据的路径无效')
         if isinstance(self.data, list):
             data_list = self.data
             for batch_data in data_list:
@@ -94,17 +94,18 @@ class Evaluate:
         else:
             self.evaluate_data()
 
-    def save_result(self, result_path=""):
+    def save_result(self, result_path=None):
         """
-        :param result_path: 相对路径，存放结果json
+        :param result_path: 绝对路径，存放结果json
         :return:
         """
-        path = self.dir_path + result_path
-        if os.path.exists(path):
-            shutil.rmtree(path)
-        if not os.path.exists(path):
-            os.mkdir(path)
-        with open(path + '/res.txt', "w") as f:
+        if result_path is None:
+            raise ValueError('请正确指定保存评估结果的绝对路径')
+        if os.path.exists(result_path):
+            shutil.rmtree(result_path)
+        if not os.path.exists(result_path):
+            os.mkdir(result_path)
+        with open(result_path + '/res.txt', "w") as f:
             f.write(json.dumps(self.metrics))
             f.write('\n')
             f.write(json.dumps(self.trace_metrics))
@@ -147,7 +148,8 @@ class Evaluate:
                 t, avg_acc = ACC(np.array(t_loc_pred[0]), np.array(loc_true))
                 self.add_metrics(mode, field, avg_acc)
             elif re.match(self.topK_pattern, mode) is not None:
-                avg_acc = top_k(np.array(t_loc_pred, dtype=object), np.array(loc_true, dtype=object), int(mode.split('-')[1]))
+                avg_acc = top_k(np.array(t_loc_pred, dtype=object), np.array(loc_true, dtype=object),
+                                int(mode.split('-')[1]))
                 self.add_metrics(mode, field, avg_acc)
             else:
                 avg_loss = 0
@@ -178,4 +180,3 @@ class Evaluate:
             self.metrics[method].append(avg)
         else:
             self.trace_metrics[method].append(avg)
-

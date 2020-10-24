@@ -12,8 +12,7 @@ def output(method, value, field):
             print('---- 该模型在 {} 评估方法下 avg_acc={:.3f} ----'.format(method, value))
         else:
             print('{} avg_acc={:.3f}'.format(method, value))
-    elif method == 'MSE' or method == 'RMSE' or method == 'MAE' \
-            or method == 'MAPE' or method == 'MARE' or method == 'SMAPE':
+    elif method in ['MSE', 'RMSE', 'MAE', 'MAPE', 'MARE', 'SMAPE']:
         if field == 'model':
             print('---- 该模型在 {} 评估方法下 avg_loss={:.3f} ----'.format(method, value))
         else:
@@ -55,7 +54,7 @@ def sort_confidence_ids(confidence_list, threshold):
     :param confidence_list:
     :return: ids_list
     """
-    sorted_list = sorted(confidence_list, reverse=True)
+    """sorted_list = sorted(confidence_list, reverse=True)
     mark_list = [0 for i in confidence_list]
     ids_list = []
     for item in sorted_list:
@@ -66,4 +65,5 @@ def sort_confidence_ids(confidence_list, threshold):
                 break
         if len(ids_list) == threshold:
             break
-    return ids_list
+    return ids_list"""
+    return list(map(lambda x: x[0], sorted(enumerate(confidence_list), key=lambda x: x[1], reverse=True)[:threshold]))
