@@ -1,4 +1,5 @@
 import json
+from heapq import nlargest
 
 
 def output(method, value, field):
@@ -66,4 +67,6 @@ def sort_confidence_ids(confidence_list, threshold):
         if len(ids_list) == threshold:
             break
     return ids_list"""
-    return list(map(lambda x: x[0], sorted(enumerate(confidence_list), key=lambda x: x[1], reverse=True)[:threshold]))
+    # return list(map(lambda x: x[0], sorted(enumerate(confidence_list), key=lambda x: x[1], reverse=True)[:threshold]))
+    max_score_with_id = nlargest(threshold, enumerate(confidence_list), lambda x: x[1])
+    return list(map(lambda x: x[0], max_score_with_id))
