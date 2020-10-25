@@ -8,8 +8,6 @@ import sys
 from evaluate.eval_funcs import ACC, top_k, SMAPE, RMSE, MAPE, MARE, MSE, MAE
 from evaluate.utils import output, transfer_data
 
-sys.path.append('..')
-
 
 class EvaluateNextLoc:
 
@@ -18,7 +16,7 @@ class EvaluateNextLoc:
         Initialize the creation of the Evaluate Class
         :param config: 用于传递 global_config
         """
-        self.config_path = '../config/evaluate/eval_next_loc.json'
+        self.config_path = './config/evaluate/eval_next_loc.json'
         try:
             with open(self.config_path) as f:
                 self.config = json.load(f)
@@ -101,8 +99,8 @@ class EvaluateNextLoc:
         """
         if result_path is None:
             raise ValueError('请正确指定保存评估结果的绝对路径')
-        if os.path.exists(result_path):
-            shutil.rmtree(result_path)
+        # if os.path.exists(result_path):
+        #     shutil.rmtree(result_path)
         if not os.path.exists(result_path):
             os.mkdir(result_path)
         with open(result_path + '/res.txt', "w") as f:
