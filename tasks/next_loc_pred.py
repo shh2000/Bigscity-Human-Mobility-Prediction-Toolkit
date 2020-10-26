@@ -14,7 +14,7 @@ class NextLocPred(Task):
 
     def __init__(self, dir_path, config, model_name, pre_name, dataset_name):
         super(NextLocPred, self).__init__(dir_path, config, model_name, pre_name, dataset_name)
-        # self.dataset = Dataset(self.dir_path)
+        self.dataset = Dataset(self.dir_path)
         self.dir_path = dir_path
         self.config = config
         self.dataset_name = dataset_name
@@ -25,8 +25,8 @@ class NextLocPred(Task):
 
     def run(self, train):
         # 需要检查模型是否已经训练过了
-        # data = self.dataset.load(self.dataset_name)
-        self.pre.transfer_data('', use_cache=False)
+        data = self.dataset.load(self.dataset_name)
+        self.pre.transfer_data(data, use_cache=False)
         # model 有几个参数需要根据 dataset 去设置
         self.config['model']['pre_feature'] = self.pre.get_data_feature()
         self.runner.init_model(self.config['model'])

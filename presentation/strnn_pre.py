@@ -50,7 +50,7 @@ class StrnnPre(Presentation):
             # load cache
             pass
         else:
-            self.pre_data()
+            self.pre_data(data)
         train_file = os.path.join(self.dir_path, "cache/strnn/prepro_train_%s.txt" % self.config['lw_time'])
         valid_file = os.path.join(self.dir_path, "cache/strnn/prepro_valid_%s.txt" % self.config['lw_time'])
         test_file = os.path.join(self.dir_path, "cache/strnn/prepro_test_%s.txt" % self.config['lw_time'])
@@ -61,10 +61,11 @@ class StrnnPre(Presentation):
         self.data['valid'] = [valid_user, valid_td, valid_ld, valid_loc, valid_dst]
         self.data['test'] = [test_user, test_td, test_ld, test_loc, test_dst]
 
-    def load_data(self, dataset_path, read_line=6500000):
+    def load_data(self, data):  # data为打开好的json型文件
+        # 函数返回值
         user2id = {}
         poi2id = {}
-
+        # 函数返回值
         train_user = []
         train_time = []
         train_lati = []
@@ -81,80 +82,45 @@ class StrnnPre(Presentation):
         test_longi = []
         test_loc = []
 
-        train_f = open(dataset_path, 'r')
-        lines = train_f.readlines()[:read_line]
-
         user_time = []
         user_lati = []
         user_longi = []
         user_loc = []
         visit_thr = 30
 
-        prev_user = int(lines[0].split('\t')[0])
-        visit_cnt = 0
-        for i, line in enumerate(lines):
-            tokens = line.strip().split('\t')
-            user = int(tokens[0])
-            if user == prev_user:
-                visit_cnt += 1
-            else:
-                if visit_cnt >= visit_thr:  # 只记录超过30行数据的user
-                    # 记录每个user的序号 因为会忽略数据少于30的user 所以序号变了
-                    user2id[prev_user] = len(user2id)
-                prev_user = user
-                visit_cnt = 1
+        for feature in data['features']:
+            # user 表示该用户的id
+            user = feature['p']['id']
+            if len(feature['g']['c']) >= visit_thr:
+                user2id[user] = len(user2id)
+        print('user2id')
+        print(user2id)
 
-        train_f = open(dataset_path, 'r')
-        lines = train_f.readlines()[:read_line]
-
-        prev_user = int(lines[0].split('\t')[0])
-        for i, line in enumerate(lines):
-            tokens = line.strip().split('\t')
-            user = int(tokens[0])
+        # 一次取出一个用户的所有信息，记为feature，包括该用户的id、所有点的信息等等
+        for feature in data['features']:
+            # user 表示该用户的id
+            user = feature['p']['id']
             if user2id.get(user) is None:
                 continue
             user = user2id.get(user)
+            # 从feature中每次取一个用户的一个点
+            for position in feature['g']['c']:
+                time = (datetime.datetime.strptime(position['t'][0], "%Y-%m-%d-%H-%M-%S")
+                        - datetime.datetime(2009, 1, 1)).total_seconds() / 60  # minutes
+                lati = position['l'][0]
+                longi = position['l'][1]
+                location = position['ex']['loc_id']
 
-            time = (datetime.datetime.strptime(tokens[1], "%Y-%m-%dT%H:%M:%SZ")
-                    - datetime.datetime(2009, 1, 1)).total_seconds() / 60  # minutes
-            lati = float(tokens[2])
-            longi = float(tokens[3])
-            location = int(tokens[4])
-            if poi2id.get(location) is None:
-                poi2id[location] = len(poi2id)  # 记录每个位置的序号
-            location = poi2id.get(location)  # 把数据集中原始的位置修改成自定的编号
+                if poi2id.get(location) is None:
+                    poi2id[location] = len(poi2id)  # 记录每个位置的序号
+                location = poi2id.get(location)  # 把数据集中原始的位置修改成自定的编号
 
-            if user == prev_user:
                 user_time.insert(0, time)
                 user_lati.insert(0, lati)
                 user_longi.insert(0, longi)
                 user_loc.insert(0, location)
-            else:
-                train_thr = int(len(user_time) * 0.7)
-                valid_thr = int(len(user_time) * 0.8)
-                train_user.append(user)  # 源代码是user 我觉得是prev_user
-                train_time.append(user_time[:train_thr])
-                train_lati.append(user_lati[:train_thr])
-                train_longi.append(user_longi[:train_thr])
-                train_loc.append(user_loc[:train_thr])
-                valid_user.append(user)
-                valid_time.append(user_time[train_thr:valid_thr])
-                valid_lati.append(user_lati[train_thr:valid_thr])
-                valid_longi.append(user_longi[train_thr:valid_thr])
-                valid_loc.append(user_loc[train_thr:valid_thr])
-                test_user.append(user)
-                test_time.append(user_time[valid_thr:])
-                test_lati.append(user_lati[valid_thr:])
-                test_longi.append(user_longi[valid_thr:])
-                test_loc.append(user_loc[valid_thr:])
 
-                prev_user = user
-                user_time = [time]
-                user_lati = [lati]
-                user_longi = [longi]
-                user_loc = [location]
-
-        if user2id.get(user) is not None:
+            # 对该用户处理其信息
             train_thr = int(len(user_time) * 0.7)
             valid_thr = int(len(user_time) * 0.8)
             train_user.append(user)
@@ -170,8 +136,10 @@ class StrnnPre(Presentation):
             test_user.append(user)
             test_time.append(user_time[valid_thr:])
             test_lati.append(user_lati[valid_thr:])
+            test_longi.append(user_longi[valid_thr:])
             test_loc.append(user_loc[valid_thr:])
 
+        # 写文件操作，和以上读取文件无关
         f = open(os.path.join(self.dir_path, 'cache/strnn/train_file.csv'), 'w')
         f.write('useid' + '\t' + 'time' + '\t' + 'lat' + '\t' + 'lon' + '\t' + 'locid' + '\n')
         for i in range(len(train_user)):
@@ -200,15 +168,13 @@ class StrnnPre(Presentation):
                train_longi, train_loc, valid_user, valid_time, valid_lati, \
                valid_longi, valid_loc, test_user, test_time, test_lati, test_longi, test_loc
 
-    def pre_data(self):
+    def pre_data(self, data):
         # Data loading params
-        train_file = os.path.join(self.dir_path, "datasets/data/Gowalla_totalCheckins.txt")
-
         print("Loading data...")
         user_cnt, poi2id, \
         train_user, train_time, train_lati, train_longi, train_loc, \
         valid_user, valid_time, valid_lati, valid_longi, valid_loc, \
-        test_user, test_time, test_lati, test_longi, test_loc = self.load_data(train_file, 5000)
+        test_user, test_time, test_lati, test_longi, test_loc = self.load_data(data=data)
 
         print("User/Location: {:d}/{:d}".format(user_cnt, len(poi2id)))
         self.data['user_cnt'] = user_cnt

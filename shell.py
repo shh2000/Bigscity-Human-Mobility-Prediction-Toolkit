@@ -20,5 +20,5 @@ if __name__ == "__main__":
     config_file.close()
     task = NextLocPred(dir_path=global_config['path'], config=global_config['task'],
                        model_name=global_config['task']['model']['model'],
-                        pre_name=global_config['task']['presentation']['presentation'], dataset_name='')
+                        pre_name=global_config['task']['presentation']['presentation'], dataset_name='gowalla-lite')
     task.run(train=global_config['task']['train']['train'])
