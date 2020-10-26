@@ -57,6 +57,9 @@ class StrnnPre(Presentation):
         train_user, train_td, train_ld, train_loc, train_dst = self.treat_prepro(train_file, step=1)
         valid_user, valid_td, valid_ld, valid_loc, valid_dst = self.treat_prepro(valid_file, step=2)
         test_user, test_td, test_ld, test_loc, test_dst = self.treat_prepro(test_file, step=3)
+        # print(len(train_user), len(train_td), len(train_ld), len(train_loc), len(train_dst))
+        # print(len(valid_user), len(valid_td), len(valid_ld), len(valid_loc), len(valid_dst))
+        # print(len(test_user), len(test_td), len(test_ld), len(test_loc), len(test_dst))
         self.data['train'] = [train_user, train_td, train_ld, train_loc, train_dst]
         self.data['valid'] = [valid_user, valid_td, valid_ld, valid_loc, valid_dst]
         self.data['test'] = [test_user, test_td, test_ld, test_loc, test_dst]
@@ -138,6 +141,12 @@ class StrnnPre(Presentation):
             test_lati.append(user_lati[valid_thr:])
             test_longi.append(user_longi[valid_thr:])
             test_loc.append(user_loc[valid_thr:])
+
+            user_time = []
+            user_lati = []
+            user_longi = []
+            user_loc = []
+
 
         # 写文件操作，和以上读取文件无关
         f = open(os.path.join(self.dir_path, 'cache/strnn/train_file.csv'), 'w')
