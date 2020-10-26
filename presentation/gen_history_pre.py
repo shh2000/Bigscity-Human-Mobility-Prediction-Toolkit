@@ -30,8 +30,6 @@ class GenHistoryPre(Presentation):
         '''
         return dataloader and total_batch
         '''
-        if mode == 'eval':
-            mode = 'test' # TODO: 暂时用测试集当 eval 吧，虽然不太好的样子
         history_data = self.gen_history(mode)
         dataset = ListDataset(history_data)
         def collactor(batch):
@@ -172,12 +170,15 @@ class GenHistoryPre(Presentation):
                     data_transformed[str(uid)] = {}
                     data_transformed[str(uid)]['sessions'] = sessions
                     # 25% session will be test session
-                    split_num = math.ceil(session_id*0.6) + 1
-                    data_transformed[str(uid)]['train'] = [str(i) for i in range(1, split_num)]
-                    if split_num < session_id:
-                        data_transformed[str(uid)]['test'] = [str(i) for i in range(split_num, session_id + 1)]
+                    train_num = math.ceil(session_id*self.config['train_rate']) + 1
+                    eval_num = math.ceil(session_id*(self.config['train_rate'] + self.config['eval_rate'])) + 1
+                    data_transformed[str(uid)]['train'] = [str(i) for i in range(1, train_num)]
+                    if train_num < session_id and eval_num < session_id:
+                        data_transformed[str(uid)]['eval'] = [str(i) for i in range(train_num, eval_num)]
+                        data_transformed[str(uid)]['test'] = [str(i) for i in range(eval_num, session_id + 1)]
                     else:
                         data_transformed[str(uid)]['test'] = []
+                        data_transformed[str(uid)]['eval'] = []
             # label encode
             print('start encode')
             print('loc size ', len(loc_set))
@@ -219,12 +220,9 @@ class GenHistoryPre(Presentation):
         pad_len = self.config['pad_len']
         history_len = self.config['history_len']
         for u in user_set:
-            if mode == 'test' and len(self.data['data_neural'][u][mode]) == 0:
-                # 当一用户 session 过少时会发生这个现象
-                continue
             sessions = self.data['data_neural'][u]['sessions']
             if mode == 'all':
-                train_id = self.data['data_neural'][u]['train'] + self.data['data_neural'][u]['test']
+                train_id = self.data['data_neural'][u]['train'] + self.data['data_neural'][u]['eval'] + self.data['data_neural'][u]['test']
             else:
                 train_id = self.data['data_neural'][u][mode]
             for c, i in enumerate(train_id):
