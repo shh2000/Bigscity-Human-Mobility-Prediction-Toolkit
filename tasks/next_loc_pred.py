@@ -42,7 +42,7 @@ class NextLocPred(Task):
             self.runner.load_cache(self.model_cache)
         res = self.runner.predict(self.pre.get_data('test'))
         # 实例化 evaluate 类
-        print(res)
+        # print(res)
         self.evaluate.evaluate(res)
         self.evaluate.save_result(self.evaluate_res_dir)
 
