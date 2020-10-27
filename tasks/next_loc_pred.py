@@ -8,6 +8,7 @@ from presentation.strnn_pre import StrnnPre
 from runner.run_deepmove import DeepMoveRunner
 from runner.run_strnn import StrnnRunner
 from datasets.basic import Dataset
+from evaluate.eval_next_loc import EvaluateNextLoc
 
 
 class NextLocPred(Task):
@@ -21,7 +22,8 @@ class NextLocPred(Task):
         self.pre = self.get_pre(pre_name, cache_name=dataset_name)
         self.runner = self.get_runner(model_name)
         self.model_cache = self.dir_path + '/cache/model_cache/{}_{}_{}.m'.format(model_name, pre_name, dataset_name)
-        # self.evaluate = evaluate(self.dir_path, self.config['evaluate']) TODO: 没有实装
+        self.evaluate = EvaluateNextLoc(self.config['evaluate'])
+        self.evaluate_res_dir = './cache/evaluate_cache'
 
     def run(self, train):
         # 需要检查模型是否已经训练过了
@@ -40,10 +42,9 @@ class NextLocPred(Task):
             self.runner.load_cache(self.model_cache)
         res = self.runner.predict(self.pre.get_data('test'))
         # 实例化 evaluate 类
-        '''
-        TODO: 等待具体的 evaluate 类
-        evaluator.evalute(res)
-        '''
+        print(res)
+        self.evaluate.evaluate(res)
+        self.evaluate.save_result(self.evaluate_res_dir)
 
     def get_pre(self, pre_name, cache_name):
         if pre_name == 'GenHistoryPre':

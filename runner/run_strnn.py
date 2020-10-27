@@ -59,6 +59,19 @@ class StrnnRunner(Runner):
         print("Test: ")
         test_batches = list(zip(data[0], data[1], data[2], data[3], data[4]))
         self.print_score(test_batches, step=3)
+        evaluate_input = {}
+        for batch in tqdm.tqdm(test_batches, desc="validation"):
+            batch_user, batch_td, batch_ld, batch_loc, batch_dst = batch
+            if len(batch_loc) < 3:
+                continue
+            batch_o, target = self.run(batch_user, batch_td, batch_ld, batch_loc, batch_dst, step=3)
+            if batch_user not in evaluate_input:
+                evaluate_input[batch_user] = {}
+            trace_input = {}
+            trace_input['loc_true'] = [target]
+            trace_input['loc_pred'] = [list(batch_o)]
+            evaluate_input[batch_user]['0'] = trace_input
+        return evaluate_input
 
     def init_model(self, model_config):
         '''
