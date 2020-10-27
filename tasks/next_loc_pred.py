@@ -6,6 +6,7 @@ from tasks.basic import Task
 from presentation.gen_history_pre import GenHistoryPre
 from runner.run_deepmove import DeepMoveRunner
 from datasets.basic import Dataset
+from evaluate.eval_next_loc import EvaluateNextLoc
 
 class NextLocPred(Task):
 
@@ -16,7 +17,10 @@ class NextLocPred(Task):
         self.pre = self.get_pre(pre_name, cache_name=dataset_name)
         self.runner = self.get_runner(model_name)
         self.model_cache = './cache/model_cache/{}_{}_{}.m'.format(model_name, pre_name, dataset_name)
-        # self.evaluate = evaluate(self.config['evaluate']) TODO: 没有实装
+        if 'data_type' not in self.config['evaluate']:
+            self.config['evaluate']['data_type'] = self.get_data_type(model_name)
+        self.evaluate = EvaluateNextLoc(self.config['evaluate'])
+        self.evaluate_res_dir = './cache/evaluate_cache'
         
     
     def run(self, train):
@@ -35,11 +39,10 @@ class NextLocPred(Task):
             # load model from cache
             self.runner.load_cache(self.model_cache)
         res = self.runner.predict(self.pre.get_data('test'))
-        # 实例化 evaluate 类
-        '''
-        TODO: 等待具体的 evaluate 类
-        evaluator.evalute(res)
-        '''
+        for evaluate_input in res:
+            self.evaluate.evaluate(evaluate_input)
+        self.evaluate.save_result(self.evaluate_res_dir)
+        
         
     def get_pre(self, pre_name, cache_name):
         if pre_name == 'GenHistoryPre':
@@ -50,5 +53,11 @@ class NextLocPred(Task):
     def get_runner(self, model_name):
         if model_name == 'deepMove':
             return DeepMoveRunner(self.config['train'])
+        else:
+            raise ValueError('no this model!')
+
+    def get_data_type(self, model_name):
+        if model_name == 'deepMove':
+            return 'DeepMove'
         else:
             raise ValueError('no this model!')
