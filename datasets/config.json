@@ -1,7 +1,7 @@
 {
   "format": "local",
   "sample": "local",
-  "foursquare": "online",
-  "foursquare-tky": "online",
-  "gowalla": "online"
+  "foursquare": "online/origin",
+  "foursquare-tky": "online/json",
+  "gowalla": "online/origin"
 }

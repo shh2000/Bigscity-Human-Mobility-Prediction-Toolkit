@@ -1,25 +1,19 @@
 import json
 
+RELATIVE_PATH = '.'
+#shell（调用者）相对于根目录的路径
+
 
 class Dataset(object):
     config = {}
-    dirPath = ''
 
-    def __init__(self, dirPath):
-        self.dirPath = dirPath
+    def __init__(self):
         try:
-            f = json.load(open(dirPath + '/datasets/data/config.json'))
+            f = json.load(open(RELATIVE_PATH + '/datasets/config.json'))
         except:
             raise ValueError('config.dirPath is wrong')
         else:
             self.config = f
 
-    def load(self, name='format'):
-        if name in self.config.keys():
-            if self.config[name] == 'local':
-                f = json.load(open(self.dirPath + '/datasets/data/' + name + '.json'))
-                return f
-            else:
-                pass
-        else:
-            raise ValueError('No such dataset')
+    def load(self, dataset_name):
+        pass
