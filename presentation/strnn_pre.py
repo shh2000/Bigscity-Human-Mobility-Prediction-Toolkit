@@ -149,6 +149,7 @@ class StrnnPre(Presentation):
             user_longi = []
             user_loc = []
 
+        """
         f = open(os.path.join(self.dir_path, 'cache/pre_cache/strnn_train_file.csv'), 'w')
         f.write('useid' + '\t' + 'time' + '\t' + 'lat' + '\t' + 'lon' + '\t' + 'locid' + '\n')
         for i in range(len(train_user)):
@@ -172,6 +173,7 @@ class StrnnPre(Presentation):
                 f.write(str(valid_user[i]) + '\t' + str(valid_time[i][j]) + '\t'
                         + str(valid_lati[i][j]) + '\t' + str(valid_longi[i][j]) + '\t' + str(valid_loc[i][j]) + '\n')
         f.close()
+        """
 
         return len(user2id), poi2id, train_user, train_time, train_lati, \
                train_longi, train_loc, valid_user, valid_time, valid_lati, \
