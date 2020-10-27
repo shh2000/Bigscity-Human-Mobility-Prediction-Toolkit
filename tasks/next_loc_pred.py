@@ -26,7 +26,7 @@ class NextLocPred(Task):
     def run(self, train):
         # 需要检查模型是否已经训练过了
         data = self.dataset.load(self.dataset_name)
-        self.pre.transfer_data(data, use_cache=False)
+        self.pre.transfer_data(data, use_cache=True)
         # model 有几个参数需要根据 dataset 去设置
         self.config['model']['pre_feature'] = self.pre.get_data_feature()
         self.runner.init_model(self.config['model'])

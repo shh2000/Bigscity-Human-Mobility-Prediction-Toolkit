@@ -74,11 +74,13 @@ class StrnnRunner(Runner):
         '''
         加载对应模型的 cache
         '''
+        self.model.load_state_dict(torch.load(cache_name))
 
     def save_cache(self, cache_name):
         '''
         将当前的模型保存到文件内
         '''
+        torch.save(self.model.state_dict(), cache_name)
 
     def parameters(self):
         params = []
@@ -142,12 +144,14 @@ class StrnnRunner(Runner):
                 continue
             iter_cnt += 1
             batch_o, target = self.run(batch_user, batch_td, batch_ld, batch_loc, batch_dst, step=step)
-            # print('batch_o: ')
-            # print('len=', end=' ')
-            # print(len(batch_o))
-            # print(batch_o)
-            # print('batch_user: ')
-            # print(batch_user)
+            print('batch_user: ', end=' ')
+            print(batch_user)
+            print('len(batch_o)= ', end=' ')
+            print(len(batch_o))
+            print('batch_o= ', end=' ')
+            print(batch_o)
+            print('target= ', end=' ')
+            print(target)
             recall1 += target in batch_o[:1]
             recall5 += target in batch_o[:5]
             recall10 += target in batch_o[:10]
