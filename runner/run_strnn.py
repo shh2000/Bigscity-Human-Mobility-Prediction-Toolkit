@@ -10,13 +10,12 @@ from models.strnn import STRNNCell
 
 
 class StrnnRunner(Runner):
-    def __init__(self, dir_path, config):
+    def __init__(self, config):
         '''
         model 的实例化放到 Runner 内部，但由于无法做到模型与表示层的完全解耦（即 embedding 还是在模型内部的）
         所以模型的初始化是依赖于表示层处理完的数据特征的，所以额外提供一个 init_model 来在 run 的时候初始化模型
         '''
-        self.dir_path = dir_path
-        with open(os.path.join(dir_path, 'config/run/strnn.json'), 'r') as config_file:
+        with open('./config/run/strnn.json', 'r') as config_file:
             self.config = json.load(config_file)
             # 全局 config 可以覆写 loc_config
             if config:

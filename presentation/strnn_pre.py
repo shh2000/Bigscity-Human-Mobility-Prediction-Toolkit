@@ -11,9 +11,9 @@ from presentation.basic import Presentation
 
 
 class StrnnPre(Presentation):
-    def __init__(self, dir_path, config, cache_name):
-        super(StrnnPre, self).__init__(dir_path, config, cache_name)
-        with open(os.path.join(dir_path, 'config/presentation/strnn_pre.json'), 'r') as config_file:
+    def __init__(self, config, cache_name):
+        super(StrnnPre, self).__init__(config, cache_name)
+        with open('./config/presentation/strnn_pre.json', 'r') as config_file:
             self.config = json.load(config_file)
         # 全局 config 可以覆写 loc_config
         parameters_str = ''
@@ -46,16 +46,16 @@ class StrnnPre(Presentation):
         return res
 
     def transfer_data(self, data, use_cache=True):
-        if use_cache and os.path.exists(os.path.join(self.dir_path, 'cache/pre_cache/', self.cache_file_name)):
+        if use_cache and os.path.exists(os.path.join('./cache/pre_cache/', self.cache_file_name)):
             # load cache
-            self.data = json.load(open(os.path.join(self.dir_path, "cache/pre_cache/", self.cache_file_name), 'r'))
+            self.data = json.load(open(os.path.join("./cache/pre_cache/", self.cache_file_name), 'r'))
         else:
             # 处理数据
             self.pre_data(data)
         # load cache
-        train_file = os.path.join(self.dir_path, "cache/pre_cache/strnn_prepro_train.txt")
-        valid_file = os.path.join(self.dir_path, "cache/pre_cache/strnn_prepro_valid.txt")
-        test_file = os.path.join(self.dir_path, "cache/pre_cache/strnn_prepro_test.txt")
+        train_file = os.path.join("./cache/pre_cache/strnn_prepro_train.txt")
+        valid_file = os.path.join("./cache/pre_cache/strnn_prepro_valid.txt")
+        test_file = os.path.join("./cache/pre_cache/strnn_prepro_test.txt")
         train_user, train_td, train_ld, train_loc, train_dst = self.treat_prepro(train_file, step=1)
         valid_user, valid_td, valid_ld, valid_loc, valid_dst = self.treat_prepro(valid_file, step=2)
         test_user, test_td, test_ld, test_loc, test_dst = self.treat_prepro(test_file, step=3)
@@ -150,7 +150,7 @@ class StrnnPre(Presentation):
             user_loc = []
 
         """
-        f = open(os.path.join(self.dir_path, 'cache/pre_cache/strnn_train_file.csv'), 'w')
+        f = open(os.path.join('./cache/pre_cache/strnn_train_file.csv'), 'w')
         f.write('useid' + '\t' + 'time' + '\t' + 'lat' + '\t' + 'lon' + '\t' + 'locid' + '\n')
         for i in range(len(train_user)):
             for j in range(len(train_time[i])):
@@ -158,7 +158,7 @@ class StrnnPre(Presentation):
                         + str(train_lati[i][j]) + '\t' + str(train_longi[i][j]) + '\t' + str(train_loc[i][j]) + '\n')
         f.close()
 
-        f = open(os.path.join(self.dir_path, 'cache/pre_cache/strnn_test_file.csv'), 'w')
+        f = open(os.path.join('./cache/pre_cache/strnn_test_file.csv'), 'w')
         f.write('useid' + '\t' + 'time' + '\t' + 'lat' + '\t' + 'lon' + '\t' + 'locid' + '\n')
         for i in range(len(test_user)):
             for j in range(len(test_time[i])):
@@ -166,7 +166,7 @@ class StrnnPre(Presentation):
                         + str(test_lati[i][j]) + '\t' + str(test_longi[i][j]) + '\t' + str(test_loc[i][j]) + '\n')
         f.close()
 
-        f = open(os.path.join(self.dir_path, 'cache/pre_cache/strnn_valid_file.csv'), 'w')
+        f = open(os.path.join('./cache/pre_cache/strnn_valid_file.csv'), 'w')
         f.write('useid' + '\t' + 'time' + '\t' + 'lat' + '\t' + 'lon' + '\t' + 'locid' + '\n')
         for i in range(len(valid_user)):
             for j in range(len(valid_time[i])):
@@ -191,13 +191,13 @@ class StrnnPre(Presentation):
         self.data['user_cnt'] = user_cnt
         self.data['loc_cnt'] = len(poi2id)
         self.data['poi2id'] = poi2id
-        json.dump(self.data, open(os.path.join(self.dir_path, "cache/pre_cache/", self.cache_file_name), 'w'))
+        json.dump(self.data, open(os.path.join("./cache/pre_cache/", self.cache_file_name), 'w'))
 
         data_model = STRNNModule(self.config['dim'], self.data['loc_cnt'],
                                  self.data['user_cnt'], self.config['ww']).cuda()
 
         print("Making train file...")
-        f = open(os.path.join(self.dir_path, "cache/pre_cache/strnn_prepro_train.txt"), 'w')
+        f = open(os.path.join("./cache/pre_cache/strnn_prepro_train.txt"), 'w')
         # Training
         # 不同user的time,lat,lon,loc是不一样多的 这里进行了合并
         # 效果是 time[0],lat[0],lon[0],loc[0]合并到一起  time[1],lat[1],lon[1],loc[1]合并到一起...
@@ -210,7 +210,7 @@ class StrnnPre(Presentation):
         f.close()
 
         print("Making valid file...")
-        f = open(os.path.join(self.dir_path, "cache/pre_cache/strnn_prepro_valid.txt"), 'w')
+        f = open(os.path.join("./cache/pre_cache/strnn_prepro_valid.txt"), 'w')
         # Eavludating
         valid_batches = list(zip(valid_time, valid_lati, valid_longi, valid_loc))
         for j, valid_batch in enumerate(tqdm.tqdm(valid_batches, desc="valid")):
@@ -219,7 +219,7 @@ class StrnnPre(Presentation):
         f.close()
 
         print("Making test file...")
-        f = open(os.path.join(self.dir_path, "cache/pre_cache/strnn_prepro_test.txt"), 'w')
+        f = open(os.path.join("./cache/pre_cache/strnn_prepro_test.txt"), 'w')
         # Testing
         test_batches = list(zip(test_time, test_lati, test_longi, test_loc))
         for j, test_batch in enumerate(tqdm.tqdm(test_batches, desc="test")):

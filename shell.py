@@ -18,6 +18,6 @@ if __name__ == "__main__":
     config_file = open('./global_config.json', 'r')
     global_config = json.load(config_file)
     config_file.close()
-    task = NextLocPred(dir_path=global_config['path'], config=global_config['task'],
+    task = NextLocPred(config=global_config['task'],
                        model_name='strnn', pre_name='STRNNPre', dataset_name='gowalla-lite')
     task.run(train=True)

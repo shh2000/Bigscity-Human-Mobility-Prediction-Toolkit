@@ -3,14 +3,12 @@ import json
 
 class Task(object):
 
-    def __init__(self, dir_path, config, model_name, pre_name, dataset_name):
+    def __init__(self, config, model_name, pre_name, dataset_name):
         '''
-        dir_path: 根目录的绝对路径
         config: global_config
         根据 model_name pre_name dataset_name 去初始化对应的模块
         evaluate 模块由于是一个 task 对应一个评估模块，所以不需要指定 evaluate_name，但也要在 init 中初始化
         '''
-        self.dir_path = dir_path
         self.config = config
 
     def run(self, train):

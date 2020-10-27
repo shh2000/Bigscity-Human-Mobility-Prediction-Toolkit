@@ -1,11 +1,7 @@
-import json
 import os
-import torch
 
 from tasks.basic import Task
-from presentation.gen_history_pre import GenHistoryPre
 from presentation.strnn_pre import StrnnPre
-from runner.run_deepmove import DeepMoveRunner
 from runner.run_strnn import StrnnRunner
 from datasets.basic import Dataset
 from evaluate.eval_next_loc import EvaluateNextLoc
@@ -13,15 +9,14 @@ from evaluate.eval_next_loc import EvaluateNextLoc
 
 class NextLocPred(Task):
 
-    def __init__(self, dir_path, config, model_name, pre_name, dataset_name):
-        super(NextLocPred, self).__init__(dir_path, config, model_name, pre_name, dataset_name)
-        self.dataset = Dataset(self.dir_path)
-        self.dir_path = dir_path
+    def __init__(self, config, model_name, pre_name, dataset_name):
+        super(NextLocPred, self).__init__(config, model_name, pre_name, dataset_name)
+        self.dataset = Dataset()
         self.config = config
         self.dataset_name = dataset_name
         self.pre = self.get_pre(pre_name, cache_name=dataset_name)
         self.runner = self.get_runner(model_name)
-        self.model_cache = self.dir_path + '/cache/model_cache/{}_{}_{}.m'.format(model_name, pre_name, dataset_name)
+        self.model_cache = './cache/model_cache/{}_{}_{}.m'.format(model_name, pre_name, dataset_name)
         self.evaluate = EvaluateNextLoc(self.config['evaluate'])
         self.evaluate_res_dir = './cache/evaluate_cache'
 
@@ -47,17 +42,13 @@ class NextLocPred(Task):
         self.evaluate.save_result(self.evaluate_res_dir)
 
     def get_pre(self, pre_name, cache_name):
-        if pre_name == 'GenHistoryPre':
-            return GenHistoryPre(self.dir_path, self.config['presentation'], cache_name)
-        elif pre_name == 'STRNNPre':
-            return StrnnPre(self.dir_path, self.config['presentation'], cache_name)
+        if pre_name == 'STRNNPre':
+            return StrnnPre(self.config['presentation'], cache_name)
         else:
             raise ValueError('no this presentation!')
 
     def get_runner(self, model_name):
-        if model_name == 'deepMove':
-            return DeepMoveRunner(self.dir_path, self.config['train'])
-        elif model_name == 'strnn':
-            return StrnnRunner(self.dir_path, self.config['train'])
+        if model_name == 'strnn':
+            return StrnnRunner(self.config['train'])
         else:
             raise ValueError('no this model!')
