@@ -26,11 +26,11 @@ self = task
 pre = self.pre
 x = {}
 x['data_neural'] = data['data_neural']
-x['loc_size'] = len(data['vid_list']) + 1
+x['loc_size'] = len(data['vid_list'])
 x['uid_size'] = len(data['uid_list'])
-x['tim_size'] = 49
+x['tim_size'] = 48
 pre.data = x
-pre.pad_item = (x['loc_size'] - 1, x['tim_size'] - 1)
+# pre.pad_item = (x['loc_size'] - 1, x['tim_size'] - 1)
 # 数据准备好了
 self.config['model']['pre_feature'] = self.pre.get_data_feature()
 self.runner.init_model(self.config['model'])

@@ -4,7 +4,7 @@
     "time_length": 72,
     "history_len": 30,
     "pad_len": 50,
-    "batch_size": 100,
+    "batch_size": 1,
     "num_workers": 0,
     "train_rate": 0.6,
     "eval_rate": 0.2

@@ -174,7 +174,7 @@ class TrajPreLocalAttnLong(nn.Module):
         self.loc_size = config['pre_feature']['loc_size']
         self.loc_emb_size = parameters['loc_emb_size']
         self.tim_size = config['pre_feature']['tim_size']
-        self.target_len = config['pre_feature']['target_len']
+        # self.target_len = config['pre_feature']['target_len']
         self.tim_emb_size = parameters['tim_emb_size']
         self.hidden_size = parameters['hidden_size']
         self.attn_type = parameters['attn_type']
@@ -217,7 +217,7 @@ class TrajPreLocalAttnLong(nn.Module):
         for t in b:
             nn.init.constant(t, 0)
 
-    def forward(self, loc, tim):
+    def forward(self, loc, tim, target_len):
         batch_size = loc.shape[0]
         h1 = torch.zeros(1, batch_size, self.hidden_size)
         h2 = torch.zeros(1, batch_size, self.hidden_size)
@@ -235,11 +235,11 @@ class TrajPreLocalAttnLong(nn.Module):
         x = self.dropout(x)
 
         if self.rnn_type == 'GRU' or self.rnn_type == 'RNN':
-            hidden_history, h1 = self.rnn_encoder(x[:-self.target_len], h1)
-            hidden_state, h2 = self.rnn_decoder(x[-self.target_len:], h2)
+            hidden_history, h1 = self.rnn_encoder(x[:-target_len], h1)
+            hidden_state, h2 = self.rnn_decoder(x[-target_len:], h2)
         elif self.rnn_type == 'LSTM':
-            hidden_history, (h1, c1) = self.rnn_encoder(x[:-self.target_len], (h1, c1))
-            hidden_state, (h2, c2) = self.rnn_decoder(x[-self.target_len:], (h2, c2))
+            hidden_history, (h1, c1) = self.rnn_encoder(x[:-target_len], (h1, c1))
+            hidden_state, (h2, c2) = self.rnn_decoder(x[-target_len:], (h2, c2))
 
         hidden_history = hidden_history.permute(1, 0, 2) # change history_len * batch_size * input_size to batch_size * history_len * input_size
         hidden_state = hidden_state.permute(1, 0, 2)

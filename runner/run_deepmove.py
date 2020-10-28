@@ -99,7 +99,8 @@ class DeepMoveRunner(Runner):
                 loc = torch.LongTensor(loc)
                 tim = torch.LongTensor(tim)
                 target = torch.LongTensor(target)
-            scores = self.model(loc, tim)
+            target_len = target.data.size()[0]
+            scores = model(loc, tim, target_len) # batch_size * target_len * loc_size
             # elif model_mode == 'simple':
             #     scores = model(loc, tim)
             #     scores = scores[:, -target_len:, :]
@@ -135,7 +136,8 @@ class DeepMoveRunner(Runner):
                 loc = torch.LongTensor(loc)
                 tim = torch.LongTensor(tim)
                 target = torch.LongTensor(target)
-            scores = model(loc, tim) # batch_size * target_len * loc_size
+            target_len = target.data.size()[0]
+            scores = model(loc, tim, target_len) # batch_size * target_len * loc_size
             # elif model_mode == 'simple':
             #     scores = model(loc, tim)
             #     scores = scores[:, -target_len:, :] 这个可以想办法在 model 里做了
@@ -174,7 +176,8 @@ class DeepMoveRunner(Runner):
                 loc = torch.LongTensor(loc)
                 tim = torch.LongTensor(tim)
                 target = torch.LongTensor(target)
-            scores = model(loc, tim) # batch_size * target_len * loc_size
+            target_len = target.data.size()[0]
+            scores = model(loc, tim, target_len) # batch_size * target_len * loc_size
             # elif model_mode == 'simple':
             #     scores = model(loc, tim)
             #     scores = scores[:, -target_len:, :]
