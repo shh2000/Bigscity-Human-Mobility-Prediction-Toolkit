@@ -35,9 +35,10 @@ pre.data = x
 self.config['model']['pre_feature'] = self.pre.get_data_feature()
 self.runner.init_model(self.config['model'])
 # 如果 train 设置为 true 或者不存在 cache 则要进行训练
-self.runner.train(train_data=self.pre.get_data('train'), eval_data=self.pre.get_data('test'))
-# 缓存 model
-self.runner.save_cache(self.model_cache)
+# self.runner.train(train_data=self.pre.get_data('train'), eval_data=self.pre.get_data('test'))
+# # 缓存 model
+# self.runner.save_cache(self.model_cache)
+self.runner.load_cache(self.model_cache)
 res = self.runner.predict(self.pre.get_data('test'))
 for evaluate_input in res:
     self.evaluate.evaluate(evaluate_input)
