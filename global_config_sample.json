@@ -1,0 +1,11 @@
+{
+  "task": {
+    "presentation": {},
+    "model": {},
+    "train": {},
+    "evaluate": {}
+  },
+  "model_pre": {
+    "deepMove": ["GenHistoryPre"]
+  }
+}
