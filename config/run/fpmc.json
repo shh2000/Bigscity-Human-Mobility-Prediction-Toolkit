@@ -1,8 +1,8 @@
 {
-    "n_epoch": 15,
+    "n_epoch": 1,
     "n_neg": 10,
     "n_factor": 32,
     "learn_rate": 0.01,
     "regular": 0.001,
-    "input_dir": "../data/"
+    "input_dir": "./data"
 }

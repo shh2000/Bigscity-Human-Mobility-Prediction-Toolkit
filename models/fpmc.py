@@ -49,9 +49,24 @@ class FPMC():
 
         correct_count = 0
         rr_list = []
+        eval_rtn = dict()
+
         for (u, i, b_tm1) in data_list:
             scores = self.compute_x_batch(u, b_tm1)
+            #print(scores)
+            #print('{} {} {}'.format(u, i, b_tm1))
 
+            # 构造与evaluation接口匹配的数据结构
+            if u not in eval_rtn:
+                eval_rtn[u] = dict()
+            l = len(eval_rtn[u])
+            eval_rtn[u][l] = dict()
+            eval_rtn[u][l]['loc_true'] = list()
+            eval_rtn[u][l]['loc_pred'] = list()
+            eval_rtn[u][l]['loc_true'].append(i)
+            eval_rtn[u][l]['loc_pred'].append(scores.argmax())
+
+            # 这里默认是使用了top1评估
             if i == scores.argmax():
                 correct_count += 1
 
@@ -59,12 +74,14 @@ class FPMC():
             rr = 1.0 / rank
             rr_list.append(rr)
 
+        #print(eval_rtn)
+
         try:
             acc = correct_count / len(rr_list)
             mrr = (sum(rr_list) / len(rr_list))
-            return (acc, mrr)
+            return acc, mrr, eval_rtn
         except:
-            return (0.0, 0.0)
+            return 0.0, 0.0, eval_rtn
 
     def learn_epoch(self, tr_data, neg_batch_size):
         for iter_idx in range(len(tr_data)):
@@ -101,9 +118,9 @@ class FPMC():
             self.learn_epoch(tr_data, neg_batch_size=neg_batch_size)
 
             if eval_per_epoch == True:
-                acc_in, mrr_in = self.evaluation(tr_data)
+                acc_in, mrr_in, _ = self.evaluation(tr_data)
                 if te_data != None:
-                    acc_out, mrr_out = self.evaluation(te_data)
+                    acc_out, mrr_out, _ = self.evaluation(te_data)
                     print('In sample:%.4f\t%.4f \t Out sample:%.4f\t%.4f' % (acc_in, mrr_in, acc_out, mrr_out))
                 else:
                     print('In sample:%.4f\t%.4f' % (acc_in, mrr_in))
@@ -111,9 +128,9 @@ class FPMC():
                 print('epoch %d done' % epoch)
 
         if eval_per_epoch == False:
-            acc_in, mrr_in = self.evaluation(tr_data)
+            acc_in, mrr_in, _ = self.evaluation(tr_data)
             if te_data != None:
-                acc_out, mrr_out = self.evaluation(te_data)
+                acc_out, mrr_out, _ = self.evaluation(te_data)
                 print('In sample:%.4f\t%.4f \t Out sample:%.4f\t%.4f' % (acc_in, mrr_in, acc_out, mrr_out))
             else:
                 print('In sample:%.4f\t%.4f' % (acc_in, mrr_in))

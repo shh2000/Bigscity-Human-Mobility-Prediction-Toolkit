@@ -8,7 +8,7 @@ from runner.basic import Runner
 
 class FPMCRunner(Runner):
 
-    def __init__(self, dir_path, config):
+    def __init__(self, dir_path, config=None):
         self.dir_path = dir_path
         with open(os.path.join(dir_path, 'config/run/fpmc.json'), 'r') as config_file:
             self.config = json.load(config_file)
@@ -25,11 +25,12 @@ class FPMCRunner(Runner):
 
     def predict(self, data):
         data_list, user_set, item_set = load_data_from_dir(data)
-        acc, mrr = self.model.evaluation(data_list)
+        acc, mrr, eval_dict = self.model.evaluation(data_list)
         print('In sample:%.4f\t%.4f' % (acc, mrr))
+        return eval_dict
 
 
-    def init_model(self, model_config):
+    def init_model(self, model_config=None):
         f_dir = self.config['input_dir']
 
         data_list, user_set, item_set = load_data_from_dir(f_dir)
@@ -47,6 +48,7 @@ class FPMCRunner(Runner):
         fpmc.init_model()
 
         self.model = fpmc
+        return tr_data, te_data
 
     def load_cache(self, cache_name):
         pass
