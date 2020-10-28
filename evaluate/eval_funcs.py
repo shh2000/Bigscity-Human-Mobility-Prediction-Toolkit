@@ -55,10 +55,10 @@ def top_k(loc_pred, loc_true, topK):
     assert len(loc_pred[0]) == len(loc_true), "top-k ACC评估方法：预测数据与真实数据大小不一致"
     if topK == 1:
         t, avg_acc = ACC(loc_pred[0], loc_true)
-        return avg_acc
+        return t, avg_acc
     else:
         tot_list = np.zeros(len(loc_true), dtype=int)
         for i in range(topK):
             t, avg_acc = ACC(loc_pred[i], loc_true)
             tot_list = tot_list + t
-        return np.mean(tot_list < topK)
+        return tot_list, np.mean(tot_list < topK)

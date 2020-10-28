@@ -8,6 +8,8 @@
 
 2020.10.23更新：更新文件结构，修复bug
 
+2020.10.28更新：增加模型评估的计算，整理评估结果
+
 ## 文件组织格式
 
 | 文件目录                               | 作用                   |
@@ -60,16 +62,16 @@ if __name__ == '__main__':
             '}' \
             '}'
     config = {
-        'data_type': 'DeepMove',
-        'mode': ['ACC', 'MAE', 'top-2', 'top-3']
+        'model': 'DeepMove',
+        'mode': ['ACC', 'top-2', 'top-3']
     }
     var = enl.EvaluateNextLoc(config)
     # 正常写法
-    var.evaluate(data=data)
+    #var.evaluate(data=data)
     # iterator/yield 写法
-    """data_list = [data, data2]
+    data_list = [data, data2]
     for data in data_list:
-        var.evaluate(data)"""
+        var.evaluate(data)
     var.save_result(r'D:\Users\12908\Documents\git\Bigscity-Human-Mobility-Prediction-Toolkit/runtimeFiles/evaluate')
 ```
 
@@ -83,7 +85,7 @@ if __name__ == '__main__':
 2. mode：评估方法，以列表形式。
 3. output_gate：控制是否在评估过程中输出评估信息，可选项**"true"**或**"false"**。
 4. data_path：若采用从文件中读取数据进行评估，则该参数为待评估文件的**绝对路径**。
-5. data_type：评估模型的数据类型，因为我们对某些如DeepMove这样的模型的输出需要进行**预处理**。
+5. model：评估模型，因为我们对某些如DeepMove这样的模型的输出需要进行**预处理**。
 
 #### __init__(config)
 
