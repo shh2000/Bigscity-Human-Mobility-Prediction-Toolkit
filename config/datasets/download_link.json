@@ -1,0 +1,22 @@
+{
+  "format": {
+    "origin": "format_link_origin",
+    "json": "format_link_json"
+  },
+  "sample": {
+    "origin": "sample_link_origin",
+    "json": "format_link_json"
+  },
+  "foursquare": {
+    "origin": "foursquare_link_origin",
+    "json": "foursquare_link_json",
+  },
+  "foursquare-tky": {
+    "origin": "foursquare-tky_link_origin",
+    "json": "foursquare-tky_link_json"
+  },
+  "gowalla": {
+    "origin": "gowalla_link_origin",
+    "json": "gowalla_link_json"
+  }
+}
