@@ -17,8 +17,8 @@ class NextLocPred(Task):
         self.pre = self.get_pre(pre_name, cache_name=dataset_name)
         self.runner = self.get_runner(model_name)
         self.model_cache = './cache/model_cache/{}_{}_{}.m'.format(model_name, pre_name, dataset_name)
-        if 'data_type' not in self.config['evaluate']:
-            self.config['evaluate']['data_type'] = self.get_data_type(model_name)
+        if 'model' not in self.config['evaluate']:
+            self.config['evaluate']['model'] = self.get_data_type(model_name)
         self.evaluate = EvaluateNextLoc(self.config['evaluate'])
         self.evaluate_res_dir = './cache/evaluate_cache'
         

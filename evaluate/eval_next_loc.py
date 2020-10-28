@@ -1,4 +1,6 @@
 import json
+import time
+
 import numpy as np
 import os
 import shutil
@@ -96,16 +98,19 @@ class EvaluateNextLoc:
     def save_result(self, result_path=None):
         """
         :param result_path: 绝对路径，存放结果json
-        :return:
+        :return: 文件名
         """
         if result_path is None:
             raise ValueError('请正确指定保存评估结果的绝对路径')
         self.calculate_mode_metrics()
         if not os.path.exists(result_path):
             os.mkdir(result_path)
-        with open(result_path + '/res.txt', "w") as f:
+        now = time.strftime("%Y-%m-%d", time.localtime(time.time()))
+        filename = result_path + '/res_' + self.model + '_' + now + '.txt'
+        with open(filename, "w") as f:
             metrics = {'model': self.model_metrics, 'data': self.metrics}
             f.write(json.dumps(metrics, indent=1))
+        return filename
 
     def evaluate_data(self):
         """
