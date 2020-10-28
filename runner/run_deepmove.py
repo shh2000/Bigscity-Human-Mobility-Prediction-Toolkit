@@ -100,7 +100,7 @@ class DeepMoveRunner(Runner):
                 tim = torch.LongTensor(tim)
                 target = torch.LongTensor(target)
             target_len = target.data.size()[1]
-            scores = model(loc, tim, target_len) # batch_size * target_len * loc_size
+            scores = self.model(loc, tim, target_len) # batch_size * target_len * loc_size
             # elif model_mode == 'simple':
             #     scores = model(loc, tim)
             #     scores = scores[:, -target_len:, :]
