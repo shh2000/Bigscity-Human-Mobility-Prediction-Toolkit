@@ -225,11 +225,11 @@ class GenHistoryPre(Presentation):
                 train_id = self.data['data_neural'][u]['train'] + self.data['data_neural'][u]['eval'] + self.data['data_neural'][u]['test']
             else:
                 train_id = self.data['data_neural'][u][mode]
-            for c, i in enumerate(train_id):
+            for c, session_id in enumerate(train_id):
                 trace = {}
                 if mode == 'train' and c == 0 or mode == 'all' and c == 0:
                     continue
-                session = sessions[i]
+                session = sessions[session_id]
                 if len(session) <= 1:
                     continue
                 ## refactor target
@@ -240,8 +240,12 @@ class GenHistoryPre(Presentation):
                 # else:
                 #     target = target[-(pad_len - history_len):]
                 history = []
-                if mode == 'test':
+                if mode == 'eval':
                     test_id = self.data['data_neural'][u]['train']
+                    for tt in test_id:
+                        history.extend([(s[0], s[1]) for s in sessions[tt]])
+                if mode == 'test':
+                    test_id = self.data['data_neural'][u]['train'] + self.data['data_neural'][u]['eval']
                     for tt in test_id:
                         history.extend([(s[0], s[1]) for s in sessions[tt]])
                 for j in range(c):
@@ -286,6 +290,6 @@ class GenHistoryPre(Presentation):
                 trace['tim'] = tim_np
                 trace['target'] = target  # target 会与 loc 有一段的重合，只有 target 的最后一位 loc 没有
                 trace['uid'] = int(u)
-                trace['session_id'] = i
+                trace['session_id'] = session_id
                 data.append(trace)
         return data
