@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package bigscity.hmptoolkit.evaluate;
+
+// 评估类型
+// [EN] The type of evaluator
+enum EvaluateType {
+    // 空类型占位
+    // [EN] Default empty type
+    EMPTY_EVALUATE_TYPE = 0;
+    // 下一跳预测评估
+    // [EN] Next location predict evaluator
+    EVAL_NEXT_LOC = 1;
+}
+
+// 评估配置
+// [EN] The config of evaluator
+message EvaluateConfig {
+    // 评估类型
+    // [EN] The type of evaluator
+    EvaluateType type = 1;
+    // 下一跳预测评估配置
+    // [EN] The config of next location predict evaluate
+    EvalNextLocConfig eval_next_loc = 2;
+}
+
+// 下一跳预测评估配置
+// [EN] The config of next location predict evaluate
+message EvalNextLocConfig {
+    // 支持的评估模式列表
+    // [EN] The list of supported evluate mode
+    repeated string mode_list = 1;
+    // 选择的评估模式列表
+    // [EN] The list of selected evluate mode
+    repeated string mode = 2;
+    //
+    // [EN]
+    string output_switch = 3;
+    //
+    // [EN]
+    string data_path = 4;
+    //
+    // [EN]
+    string model = 5;
+}

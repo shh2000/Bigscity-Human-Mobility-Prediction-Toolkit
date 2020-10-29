@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package bigscity.hmptoolkit.datasets;
+
+// 数据集类型
+// [EN] The type of datasets
+enum DatasetsType {
+    // 空类型占位
+    // [EN] Default empty type
+    EMPTY_DATASETS_TYPE = 0;
+    // 本地数据集
+    // [EN] Local datasets
+    LOADER = 1;
+    // 获取远程数据集
+    // [EN] Fetch datasets from Internet
+    FETCHER = 2;
+}
+
+// 数据类型
+// [EN] Data type
+enum DataType {
+    // 空类型占位
+    // [EN] Default empty type
+    EMPTY_DATA_TYPE = 0;
+    // 数据集原始数据
+    // [EN] The origin data
+    ORIGIN = 1;
+    // 转化后的json数据
+    // [EN] Translated json data
+    JSON = 2;
+}
+
+// 数据集配置
+// [EN] The config of datasets
+message DatasetsConfig {
+    // 数据集类型
+    // [EN] The type of datasets
+    DatasetsType type = 1;
+    // 数据集文件路径
+    // [EN] The datasets file path
+    string data_dir = 2;
+    // 数据集名
+    // [EN] The dataset name
+    string dataset_name = 3;
+    // 数据类型
+    // [EN] Data type
+    DataType data_type = 4;
+    // 数据集下载链接配置
+    // [EN] The (name, download_link) dictory
+    map<string, DatasetLink> download_links = 5;
+    // 数据集划分比例
+    // [EN] The divided rate
+    DividedRate divided_rate = 6;
+}
+
+// 数据下载链接配置
+// [EN] The link of dataset
+message DatasetLink {
+    // 原始数据链接
+    // [EN] The link of origin dataset
+    string origin = 1;
+    // json格式数据链接
+    // [EN] The link of json type dataset
+    string json = 2;
+}
+
+// 数据集划分比例
+// [EN] The divided rate
+message DividedRate {
+    // 训练集划分，如[0, 0.85]
+    // [EN] Train set divided rate, such as [0, 0.85]
+    repeated float train = 1;
+    // 验证集划分，如[0.85, 0.9]
+    // [EN] Eval set divided rate, such as [0, 0.85]
+    repeated float eval = 2;
+    // 测试集划分，如[0.9, 1]
+    // [EN] Test set divided rate, such as [0, 0.85]
+    repeated float test = 3;
+}

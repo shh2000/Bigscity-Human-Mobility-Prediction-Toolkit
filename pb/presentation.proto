@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package bigscity.hmptoolkit.presentation;
+
+// PresentationType 表示层类型
+// [EN] PresentationType indicates the type of the presentation layer
+enum PresentationType {
+    // 空类型占位
+    // [EN] Default empty type
+    EMPTY_PRESENTATION_TYPE = 0;
+    // 生成历史数据配置
+    // [EN] gen_history
+    GEN_HISTORY_PRE = 1;
+}
+
+// Presentation 配置
+// [EN] The config of presentation
+message PresentationConfig {
+    // Presentation 类型
+    // [EN] The type of the presentation
+    PresentationType type = 1;
+    // GenHistoryPre配置
+    // [EN] The config of GenHistoryPre
+    GenHistoryPreConfig gen_history_pre = 2;
+}
+
+// GenHistoryPre 配置
+// [EN] The config of GenHistoryPre
+message GenHistoryPreConfig {
+    //
+    // [EN]
+    int32 min_session_len = 1;
+    //
+    // [EN]
+    int32 min_sessions = 2;
+    //
+    // [EN]
+    int32 time_length = 3;
+    //
+    // [EN]
+    int32 history_len = 4;
+    //
+    // [EN]
+    int32 pad_len = 5;
+    //
+    // [EN]
+    int32 batch_size = 6;
+    //
+    // [EN]
+    int32 num_workers = 7;
+}

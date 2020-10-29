@@ -1,0 +1,65 @@
+syntax = "proto3";
+
+import "pb/models.proto";
+
+package bigscity.hmptoolkit.runner;
+
+// runner类型
+// [EN] The type of runner
+enum RunnerType {
+    // 空类型占位
+    // [EN] Default empty type
+    EMPTY_RUNNER_TYPE = 0;
+    // Deepmove runner 类型
+    // [EN] deepmove runner
+    DEEPMOVE = 1;
+}
+
+// runner配置
+// [EN] The config of runner
+message RunnerConfig {
+    // runner 类型
+    // [EN] The type of runner
+    RunnerType type = 1;
+    // deepmove配置
+    // [EN] The config of deepmove
+    DeepmoveRunnerConfig deepmove = 2;
+}
+
+// deepmove runner配置
+// [EN] The config of deepmove runner
+message DeepmoveRunnerConfig {
+    // 是否使用cuda
+    // [EN] Whether to use cuda
+    bool use_cuda = 1;
+    // 学习率
+    // [EN] learning rate
+    float lr = 2;
+    //
+    // [EN]
+    float L2 = 3;
+    // 最大训练轮次
+    // [EN] max train epoch
+    int32 max_epoch = 4;
+    //
+    // [EN]
+    int32 lr_step = 5;
+    //
+    // [EN]
+    float lr_decay = 6;
+    //
+    // [EN]
+    float clip = 7;
+    //
+    // [EN]
+    float schedule_threshold = 8;
+    //
+    // [EN]
+    int32 verbose = 9;
+    // 模型类型
+    // [EN] model type
+    bigscity.hmptoolkit.models.ModelType model_type = 10;
+    // deepmove 模型配置
+    // [EN] deepmove model config
+    bigscity.hmptoolkit.models.DeepmoveConfig model_deepmove = 11;
+}
