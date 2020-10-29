@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+import "pb/tasks.proto";
+
+package bigscity.hmptoolkit;
+
+// 全局配置
+// [EN] Global config
+message GlobalConfig {
+    // 任务配置
+    // [EN] Task config
+    bigscity.hmptoolkit.tasks.TaskConfig task = 1;
+    // 默认配置文件加载位置
+    // [EN] The path of default config
+    string default_config = 2;
+}

@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+import "pb/datasets.proto";
+import "pb/presentation.proto";
+import "pb/runner.proto";
+import "pb/evaluate.proto";
+
+package bigscity.hmptoolkit.tasks;
+
+// TaskType 表示工具箱任务类型
+// [EN] TaskType indicates the type of the toolkit task
+enum TaskType {
+    // 空类型占位
+    // [EN] Default empty type
+    EMPTY_TASK_TYPE = 0;
+    // 下一跳预测任务
+    // [EN] Next location predict task
+    NEXT_LOC_PRED = 1;
+    // 从网络获取数据集任务
+    // [EN] Fetch datasets from the Internet
+    FETCH_DATASETS = 2;
+    // 数据集转化任务
+    // [EN] Translate the local datasets
+    TRANS_DATASETS = 3;
+}
+
+// 任务配置
+// [EN] The config of task
+message TaskConfig {
+    // 任务类型
+    // [EN] Task type
+    TaskType type = 1;
+    // 下一跳预测任务配置
+    // [EN] Next location predict config
+    NextLocPredConfig next_loc_pred = 2;
+    // 从网络获取数据集任务配置
+    // [EN] The config of fetching datasets from the Internet
+    FetchDatasetsConfig fetch_datasets = 3;
+    // 数据集转化任务
+    // [EN] Translate the local datasets
+    TransDatasetsConfig trans_datasets = 4;
+}
+
+// 下一跳预测任务配置
+// [EN] The config of next localation predict
+message NextLocPredConfig {
+    // 数据集配置
+    // [EN] The config of datasets
+    bigscity.hmptoolkit.datasets.DatasetsConfig datasets = 1;
+    // 表示层配置
+    // [EN] The config of presentation
+    bigscity.hmptoolkit.presentation.PresentationConfig presentation = 2;
+    // runner配置
+    // [EN] The config of runner
+    bigscity.hmptoolkit.runner.RunnerConfig runner = 3;
+    // 评估配置
+    // [EN] The config of evalutor
+    bigscity.hmptoolkit.evaluate.EvaluateConfig evaluate = 4;
+}
+
+
+// 从网络获取数据集任务配置
+// [EN] The config of fetching datasets from the Internet
+message FetchDatasetsConfig {
+    // 数据集配置
+    // [EN] The config of datasets
+    bigscity.hmptoolkit.datasets.DatasetsConfig datasets = 1;
+}
+
+// 数据集转化任务
+// [EN] Translate the local datasets
+message TransDatasetsConfig {
+    // 数据集配置
+    // [EN] The config of datasets
+    bigscity.hmptoolkit.datasets.DatasetsConfig datasets = 1;
+}

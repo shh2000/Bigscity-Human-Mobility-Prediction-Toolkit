@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package bigscity.hmptoolkit.models;
+
+// 模型类型
+// [EN] the type of models
+enum ModelType {
+    // 空类型占位
+    // [EN] Default empty type
+    EMPTY_MODEL_TYPE = 0;
+    // deepmove模型
+    // [EN] deepmove model
+    DEEPMOVE = 1;
+}
+
+// // 模型配置
+// // [EN] model config
+// message ModelConfig {
+//     // 模型类型
+//     // [EN] model type
+//     ModelType type = 1;
+//     // deepmove 模型配置
+//     // [EN] deepmove model config
+//     DeepmoveConfig deepmove = 2;
+// }
+
+// deepmove 模型配置
+// [EN] The config of deepmove model
+message DeepmoveConfig {
+    //
+    // [EN]
+    int32 loc_emb_size = 1;
+    //
+    // [EN]
+    int32 uid_emb_size = 2;
+    //
+    // [EN]
+    int32 tim_emb_size = 3;
+    //
+    // [EN]
+    int32 hidden_size = 4;
+    //
+    // [EN]
+    string attn_type = 5;
+    //
+    // [EN]
+    string rnn_type = 6;
+    //
+    // [EN]
+    float dropout_p = 7;
+}

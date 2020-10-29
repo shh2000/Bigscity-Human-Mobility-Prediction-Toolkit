@@ -1,11 +1,22 @@
 {
   "task": {
-    "presentation": {},
-    "model": {},
-    "train": {},
-    "evaluate": {}
-  },
-  "model_pre": {
-    "deepMove": ["GenHistoryPre"]
+    "type": "NEXT_LOC_PRED",
+    "next_loc_pred": {
+      "datasets": {
+        "type": "LOADER"
+      },
+      "presentation": {
+        "type": "GEN_HISTORY_PRE"
+      },
+      "runner": {
+        "type": "DEEPMOVE",
+        "deepmove": {
+          "model_type": "DEEPMOVE"
+        }
+        },
+      "evaluate": {
+        "type": "EVAL_NEXT_LOC"
+      }
+    }
   }
 }
