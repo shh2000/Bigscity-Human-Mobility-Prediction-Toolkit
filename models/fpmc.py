@@ -16,13 +16,14 @@ class FPMC():
         self.learn_rate = learn_rate
         self.regular = regular
 
-    @staticmethod
+    # 在runner内部进行保存，不在模型内部提供保存接口
+    ''''@staticmethod
     def dump(fpmcObj, fname):
         pickle.dump(fpmcObj, open(fname, 'wb'))
 
     @staticmethod
     def load(fname):
-        return pickle.load(open(fname, 'rb'))
+        return pickle.load(open(fname, 'rb'))'''
 
     def init_model(self, std=0.01):
         self.VUI = np.random.normal(0, std, size=(self.n_user, self.n_factor))
@@ -64,7 +65,8 @@ class FPMC():
             eval_rtn[u][l]['loc_true'] = list()
             eval_rtn[u][l]['loc_pred'] = list()
             eval_rtn[u][l]['loc_true'].append(i)
-            eval_rtn[u][l]['loc_pred'].append(scores.argmax())
+            eval_rtn[u][l]['loc_pred'].append(list())
+            eval_rtn[u][l]['loc_pred'][0].append(scores.argmax())
 
             # 这里默认是使用了top1评估
             if i == scores.argmax():

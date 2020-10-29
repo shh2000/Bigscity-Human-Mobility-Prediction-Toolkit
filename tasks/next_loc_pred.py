@@ -28,7 +28,7 @@ class NextLocPred(Task):
         data = self.dataset.load(self.dataset_name)
         self.pre.transfer_data(data)
         # model 有几个参数需要根据 dataset 去设置
-        self.config['model']['pre_feature'] = self.pre.get_data_feature()
+        self.config['model']['pre_feature'] =  self.pre.get_data_feature()
         self.runner.init_model(self.config['model'])
         if train or not os.path.exists(self.model_cache):
             # 如果 train 设置为 true 或者不存在 cache 则要进行训练

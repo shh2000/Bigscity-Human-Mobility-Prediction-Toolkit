@@ -102,10 +102,12 @@ class EvaluateNextLoc:
             raise ValueError('请正确指定保存评估结果的绝对路径')
         self.calculate_mode_metrics()
         if not os.path.exists(result_path):
+            print('here1')
             os.mkdir(result_path)
         with open(result_path + '/res.txt', "w") as f:
             metrics = {'model': self.model_metrics, 'data': self.metrics}
             f.write(json.dumps(metrics, indent=1))
+            print('here2')
 
     def evaluate_data(self):
         """

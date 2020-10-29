@@ -6,7 +6,7 @@ config = {
     "train": {},
     "evaluate": {}
 }
-task = NextLocPred(config=config, model_name="deepMove", pre_name="GenHistoryPre", dataset_name="foursquare-tky")
+task = NextLocPred(config=config, model_name="fpmc", pre_name="GenHistoryPre", dataset_name="foursquare-tky")
 task.run(True)
 # 测试 task 的 run
 # self = task

@@ -1,5 +1,6 @@
 import os
 import json
+import pickle
 from models.fpmc import FPMC
 from utils.fpmc_utils import *
 from random import shuffle
@@ -51,9 +52,11 @@ class FPMCRunner(Runner):
         return tr_data, te_data
 
     def load_cache(self, cache_name):
-        pass
+        return pickle.load(open(cache_name, 'rb'))
 
     def save_cache(self, cache_name):
-        pass
+        if not os.path.exists(self.cache_dir):
+            os.makedirs(self.cache_dir)
+        pickle.dump(self.model, open(cache_name, 'wb'))
 
 
