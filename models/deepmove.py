@@ -172,7 +172,7 @@ class TrajPreLocalAttnLong(nn.Module):
         # 全局 config 可以覆写 loc_config
         for key in parameters:
             if key in config:
-                parameters = config[key]
+                parameters[key] = config[key]
         self.loc_size = config['pre_feature']['loc_size']
         self.loc_emb_size = parameters['loc_emb_size']
         self.tim_size = config['pre_feature']['tim_size']
