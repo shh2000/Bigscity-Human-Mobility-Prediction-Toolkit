@@ -226,6 +226,7 @@ class GenHistoryPre(Presentation):
         '''
         data = []
         user_set = self.data['data_neural'].keys()
+        history_len = self.config['history_len']
         for u in user_set:
             sessions = self.data['data_neural'][u]['sessions']
             if mode == 'all':
@@ -252,6 +253,9 @@ class GenHistoryPre(Presentation):
                         history.extend([(s[0], s[1]) for s in sessions[tt]])
                 for j in range(c):
                     history.extend([(s[0], s[1]) for s in sessions[train_id[j]]])
+                # history 太长了根本没法训练
+                if len(history) > history_len:
+                    history = history[-history_len:]
                 history_loc = [s[0] for s in history]  # 把多个 history 路径合并成一个？
                 history_tim = [s[1] for s in history]
                 trace['history_loc'] = history_loc
