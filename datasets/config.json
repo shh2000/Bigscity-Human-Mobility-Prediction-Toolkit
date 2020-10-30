@@ -3,5 +3,5 @@
   "sample": "local",
   "foursquare": "online",
   "foursquare-tky": "online",
-  "gowalla": "online"
+  "gowalla": "local"
 }

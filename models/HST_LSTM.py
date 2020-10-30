@@ -2,6 +2,7 @@ import math
 import json
 import torch
 import os
+from math import pow
 from torch import nn
 from torch.nn import init
 from torch.nn.parameter import Parameter
@@ -218,8 +219,8 @@ class HSTLSTM(nn.Module):
         self.input_size = parameters['input_size']
         self.hidden_size = parameters['hidden_size']
         self.aoi_size = parameters['aoi_size']
-        self.temporal_slot_size = parameters['temporal_slot_size']
-        self.spacial_slot_size = parameters['spacial_slot_size']
+        self.time_slot_size = parameters['time_slot_size']
+        self.space_slot_size = parameters['space_slot_size']
         self.bias = parameters['bias']
         self.lr = parameters['lr']
         self.device = parameters['device']
@@ -228,8 +229,8 @@ class HSTLSTM(nn.Module):
         # weights
         self.w_p = Parameter(torch.randn(self.hidden_size, self.aoi_size), requires_grad=True)
         self.b_p = Parameter(torch.randn(self.aoi_size), requires_grad=True)
-        self.temporal_embedding = nn.Embedding(self.temporal_slot_size, self.input_size)
-        self.spacial_embedding = nn.Embedding(self.spacial_slot_size, self.input_size)
+        self.temporal_embedding = nn.Embedding(int(pow(self.time_slot_size, 2)), self.input_size)
+        self.spacial_embedding = nn.Embedding(int(pow(self.space_slot_size, 2)), self.input_size)
         self.aoi_embedding = nn.Embedding(self.aoi_size, self.input_size)
 
         # layers

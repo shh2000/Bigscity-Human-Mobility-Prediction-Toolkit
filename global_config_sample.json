@@ -1,6 +1,7 @@
 {
-  "path": "/Users/marc-antoine/Documents/Github/Bigscity-Human-Mobility-Prediction-Toolkit/",
-  "server_path": "/tmp/pycharm_project_727/",
+  "dir_path": "/Users/marc-antoine/Documents/Github/Bigscity-Human-Mobility-Prediction-Toolkit/",
+  "dir_path1": "/tmp/pycharm_project_727/",
+  "use_gpu": false,
   "task": {
     "presentation": {},
     "model": {},
@@ -9,5 +10,8 @@
   },
   "model_pre": {
     "deepMove": ["GenHistoryPre"]
+  },
+  "model": {
+    "pre_feature": null
   }
 }

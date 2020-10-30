@@ -4,13 +4,13 @@
  "batch_size": 20,
  "session_size": 10,
  "step_size": 10,
- "aoi_size": 7,
+ "aoi_size": 10,
  "input_size": 10,
- "temporal_slot_size": 10,
- "spacial_slot_size": 10,
- "epochs": 10,
+ "time_slot_size": 20,
+ "space_slot_size": 20,
+ "epochs": 100,
  "lr": 1e-3,
  "device": 0,
- "use_gpu": true,
- "use_server": true
+ "use_gpu": false,
+ "use_server": false
 }

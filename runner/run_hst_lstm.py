@@ -7,10 +7,10 @@ from models import HST_LSTM
 
 
 class HSTLSTMRunner(Runner):
-    def __init__(self, config, dir_path):
-        self.dir_path = dir_path
+    def __init__(self, config):
+        self.dir_path = config['dir_path']
         self.model = None
-        with open(os.path.join(dir_path, "config/run/hst-lstm.json")) as f:
+        with open(os.path.join(self.dir_path, "config/run/hst-lstm.json")) as f:
             self.config = json.load(f)
             if config:
                 for key in self.config:
@@ -19,11 +19,11 @@ class HSTLSTMRunner(Runner):
 
     def init_model(self, model_config):
         if self.config['use_gpu']:
-            self.model = HST_LSTM.HSTLSTM(model_config).to(self.config["device"])
+            self.model = HST_LSTM.HSTLSTM(self.config).to(self.config["device"])
         else:
-            self.model = HST_LSTM.HSTLSTM(model_config)
+            self.model = HST_LSTM.HSTLSTM(self.config)
 
-    def train(self, train_data, eval_data=None):
+    def train(self, train_data, eval_data):
         """
         train function
         :param train_data: 已经预处理好的数据 shape = (batch, session, step, 3)
@@ -31,6 +31,7 @@ class HSTLSTMRunner(Runner):
         """
         if self.config["use_gpu"]:
             train_data = train_data.cuda()
+            eval_data = eval_data.cuda()
         optimizer = torch.optim.Adam(self.model.parameters(), self.config['lr'])
         loss_func = torch.nn.CrossEntropyLoss()
         data_set = TensorDataset(train_data, train_data[:, :, :, 0])  # y就是aoi数据
@@ -52,7 +53,18 @@ class HSTLSTMRunner(Runner):
                         "cpu").sum().item() / prediction.numel()
                     i = i + 1
                     optimizer.step()
-            print("epoch{} : loss: {}       acc: {}".format(epoch, current_loss, current_acc / i))
+            print("epoch{} : train_loss: {}       train_acc: {}".format(epoch, current_loss, current_acc / i))
+            if epoch%5 == 0 and epoch != 0:
+                eval_loss = 0.
+                eval_acc = 0.
+                for session in range(1, eval_data.size(1)):
+                    x = eval_data[:, :session, :, :]
+                    distribution, prediction = self.model(x, eval_data[:, session, :, :])
+                    loss = loss_func(distribution[:, :-1, :].flatten(0, 1), eval_data[:, session, 1:, 0].flatten())
+                    eval_loss += loss.sum().detach().to("cpu").item()
+                    eval_acc += prediction[:, :-1].eq(eval_data[:, session, 1:, 0]).detach().to(
+                        "cpu").sum().item() / prediction.numel()
+                print("Validation: eval_loss: {}       eval_acc: {}".format(eval_loss, eval_acc / (eval_data.size(1)-1)))
 
     def predict(self, pre):  # 默认最后一个session是要预测的
         if self.config["use_gpu"]:
@@ -60,10 +72,10 @@ class HSTLSTMRunner(Runner):
         return self.model(pre[:, :-1, :, :], pre[:, -1, :, :])
 
     def load_cache(self, cache_name):
-        if os.path.exists(os.path.join(self.dir_path + "test/", cache_name)):
+        if os.path.exists(os.path.join(self.dir_path, cache_name)):
             raise FileNotFoundError
         else:
-            self.model = torch.load(os.path.join(self.dir_path + "test/", cache_name))
+            self.model = torch.load(os.path.join(self.dir_path, cache_name))
 
     def save_cache(self, cache_name):
-        torch.save(self.model, os.path.join(self.dir_path + "test/", cache_name))
+        torch.save(self.model, os.path.join(self.dir_path, cache_name))
