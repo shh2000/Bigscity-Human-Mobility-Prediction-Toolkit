@@ -73,6 +73,7 @@ class DeepMoveRunner(Runner):
         os.rmdir(self.tmp_path)
 
     def init_model(self, model_config):
+        model_config['use_cuda'] = self.config['use_cuda']
         if self.config['use_cuda']:
             self.model = TrajPreLocalAttnLong(model_config).cuda()
         else:
@@ -90,27 +91,33 @@ class DeepMoveRunner(Runner):
         self.model.train(False)
         test_data_loader, test_total_batch = data['loader'], data['total_batch']
         cnt = 0
-        for loc, tim, history_loc, history_tim, history_count, uid, target, session_id in test_data_loader:
+        for loc, tim, loc_len, history_loc, history_tim, history_len, uid, target, session_id in test_data_loader:
             if self.config['use_cuda']:
                 loc = torch.LongTensor(loc).cuda()
                 tim = torch.LongTensor(tim).cuda()
+                history_loc = torch.LongTensor(history_loc).cuda()
+                history_tim = torch.LongTensor(history_tim).cuda()
                 target = torch.LongTensor(target).cuda()
             else:
                 loc = torch.LongTensor(loc)
                 tim = torch.LongTensor(tim)
+                history_loc = torch.LongTensor(history_loc)
+                history_tim = torch.LongTensor(history_tim)
                 target = torch.LongTensor(target)
-            target_len = target.data.size()[1]
-            scores = self.model(loc, tim, target_len) # batch_size * target_len * loc_size
-            # elif model_mode == 'simple':
-            #     scores = model(loc, tim)
-            #     scores = scores[:, -target_len:, :]
+            scores = self.model(loc, tim, history_loc, history_tim, loc_len, history_len) # batch_size * target_len * loc_size
+            # 找到真正的预测值
+            for i in range(scores.shape[0]):
+                if i == 0:
+                    true_scores = scores[i][loc_len[i] - 1].reshape(1, -1)
+                else:
+                    true_scores = torch.cat((true_scores, scores[i][loc_len[i] - 1].reshape(1, -1)), 0)
             evaluate_input = {}
             for i in range(len(uid)):
                 u = uid[i]
                 s = session_id[i]
                 trace_input = {}
-                trace_input['loc_true'] = target[i].tolist()
-                trace_input['loc_pred'] = scores[i].tolist()
+                trace_input['loc_true'] = [target[i].item()]
+                trace_input['loc_pred'] = true_scores[i].tolist()
                 if u not in evaluate_input:
                     evaluate_input[u] = {}
                 evaluate_input[u][s] = trace_input
@@ -124,27 +131,30 @@ class DeepMoveRunner(Runner):
         total_loss = []
         cnt = 0
         loc_size = model.loc_size
-        for loc, tim, history_loc, history_tim, history_count, uid, target, session_id in data_loader:
+        for loc, tim, loc_len, history_loc, history_tim, history_len, uid, target, session_id in data_loader:
             # use accumulating gradients
             # one batch, one step
             optimizer.zero_grad()
             if use_cuda:
                 loc = torch.LongTensor(loc).cuda()
                 tim = torch.LongTensor(tim).cuda()
+                history_loc = torch.LongTensor(history_loc).cuda()
+                history_tim = torch.LongTensor(history_tim).cuda()
                 target = torch.LongTensor(target).cuda()
             else:
                 loc = torch.LongTensor(loc)
                 tim = torch.LongTensor(tim)
+                history_loc = torch.LongTensor(history_loc)
+                history_tim = torch.LongTensor(history_tim)
                 target = torch.LongTensor(target)
-            target_len = target.data.size()[1]
-            scores = model(loc, tim, target_len) # batch_size * target_len * loc_size
-            # elif model_mode == 'simple':
-            #     scores = model(loc, tim)
-            #     scores = scores[:, -target_len:, :] 这个可以想办法在 model 里做了
-            # change to batch_size x target_len * loc_size
-            scores = scores.reshape(-1, loc_size)
-            target = target.reshape(-1)
-            loss = criterion(scores, target)
+            scores = model(loc, tim, history_loc, history_tim, loc_len, history_len) # batch_size * max(loc_len) * loc_size
+            # 找到真正的预测值
+            for i in range(scores.shape[0]):
+                if i == 0:
+                    true_scores = scores[i][loc_len[i] - 1].reshape(1, -1)
+                else:
+                    true_scores = torch.cat((true_scores, scores[i][loc_len[i] - 1].reshape(1, -1)), 0)
+            loss = criterion(true_scores, target)
             loss.backward()
             total_loss.append(loss.data.cpu().numpy().tolist())
             try:
@@ -167,25 +177,28 @@ class DeepMoveRunner(Runner):
         total_acc = []
         cnt = 0
         loc_size = model.loc_size
-        for loc, tim, history_loc, history_tim, history_count, uid, target, session_id in data_loader:
+        for loc, tim, loc_len, history_loc, history_tim, history_len, uid, target, session_id in data_loader:
             if use_cuda:
                 loc = torch.LongTensor(loc).cuda()
                 tim = torch.LongTensor(tim).cuda()
+                history_loc = torch.LongTensor(history_loc).cuda()
+                history_tim = torch.LongTensor(history_tim).cuda()
                 target = torch.LongTensor(target).cuda()
             else:
                 loc = torch.LongTensor(loc)
                 tim = torch.LongTensor(tim)
+                history_loc = torch.LongTensor(history_loc)
+                history_tim = torch.LongTensor(history_tim)
                 target = torch.LongTensor(target)
-            target_len = target.data.size()[1]
-            scores = model(loc, tim, target_len) # batch_size * target_len * loc_size
-            # elif model_mode == 'simple':
-            #     scores = model(loc, tim)
-            #     scores = scores[:, -target_len:, :]
-            scores = scores.reshape(-1, loc_size)
-            target = target.reshape(-1)
-            loss = criterion(scores, target)
+            scores = model(loc, tim, history_loc, history_tim, loc_len, history_len) # batch_size * target_len * loc_size
+            for i in range(scores.shape[0]):
+                if i == 0:
+                    true_scores = scores[i][loc_len[i] - 1].reshape(1, -1)
+                else:
+                    true_scores = torch.cat((true_scores, scores[i][loc_len[i] - 1].reshape(1, -1)), 0)
+            loss = criterion(true_scores, target)
             total_loss.append(loss.data.cpu().numpy().tolist())
-            acc = self.get_acc(target, scores)
+            acc = self.get_acc(target, true_scores)
             total_acc.append(acc)
             cnt += 1
             if cnt % verbose == 0:

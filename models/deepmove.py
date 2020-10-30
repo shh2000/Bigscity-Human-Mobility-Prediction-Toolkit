@@ -7,6 +7,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import json
 from torch.autograd import Variable
+from torch.nn.utils.rnn import pack_padded_sequence
+from torch.nn.utils.rnn import pad_packed_sequence
 
 # ############# rnn model with attention ####################### #
 class Attn(nn.Module):
@@ -174,7 +176,6 @@ class TrajPreLocalAttnLong(nn.Module):
         self.loc_size = config['pre_feature']['loc_size']
         self.loc_emb_size = parameters['loc_emb_size']
         self.tim_size = config['pre_feature']['tim_size']
-        # self.target_len = config['pre_feature']['target_len']
         self.tim_emb_size = parameters['tim_emb_size']
         self.hidden_size = parameters['hidden_size']
         self.attn_type = parameters['attn_type']
@@ -217,7 +218,7 @@ class TrajPreLocalAttnLong(nn.Module):
         for t in b:
             nn.init.constant(t, 0)
 
-    def forward(self, loc, tim, target_len):
+    def forward(self, loc, tim, history_loc, history_tim, loc_len, history_len):
         batch_size = loc.shape[0]
         h1 = torch.zeros(1, batch_size, self.hidden_size)
         h2 = torch.zeros(1, batch_size, self.hidden_size)
@@ -234,21 +235,31 @@ class TrajPreLocalAttnLong(nn.Module):
         x = torch.cat((loc_emb, tim_emb), 2).permute(1, 0, 2) # change batch * seq * input_size to seq * batch * input_size
         x = self.dropout(x)
 
-        if self.rnn_type == 'GRU' or self.rnn_type == 'RNN':
-            hidden_history, h1 = self.rnn_encoder(x[:-target_len], h1)
-            hidden_state, h2 = self.rnn_decoder(x[-target_len:], h2)
-        elif self.rnn_type == 'LSTM':
-            hidden_history, (h1, c1) = self.rnn_encoder(x[:-target_len], (h1, c1))
-            hidden_state, (h2, c2) = self.rnn_decoder(x[-target_len:], (h2, c2))
+        history_loc_emb = self.emb_loc(history_loc)
+        history_tim_emb = self.emb_tim(history_tim)
+        history_x = torch.cat((history_loc_emb, history_tim_emb), 2).permute(1, 0, 2)
+        history_x = self.dropout(history_x)
 
-        hidden_history = hidden_history.permute(1, 0, 2) # change history_len * batch_size * input_size to batch_size * history_len * input_size
-        hidden_state = hidden_state.permute(1, 0, 2)
+        # pack x and history_x
+        pack_x = pack_padded_sequence(x, lengths=loc_len, enforce_sorted=False)
+        pack_history_x = pack_padded_sequence(history_x, lengths=history_len, enforce_sorted=False)
+        if self.rnn_type == 'GRU' or self.rnn_type == 'RNN':
+            hidden_history, h1 = self.rnn_encoder(pack_history_x, h1)
+            hidden_state, h2 = self.rnn_decoder(pack_x, h2)
+        elif self.rnn_type == 'LSTM':
+            hidden_history, (h1, c1) = self.rnn_encoder(pack_history_x, (h1, c1))
+            hidden_state, (h2, c2) = self.rnn_decoder(pack_x, (h2, c2))
+        #unpack
+        hidden_history, hidden_history_len = pad_packed_sequence(hidden_history, batch_first=True)
+        hidden_state, hidden_state_len = pad_packed_sequence(hidden_state, batch_first=True)
+        # hidden_history = hidden_history.permute(1, 0, 2) # change history_len * batch_size * input_size to batch_size * history_len * input_size
+        # hidden_state = hidden_state.permute(1, 0, 2)
         attn_weights = self.attn(hidden_state, hidden_history) # batch_size * state_len * history_len
         context = attn_weights.bmm(hidden_history) # batch_size * state_len * input_size
         out = torch.cat((hidden_state, context), 2)  # batch_size * state_len * 2 x input_size
         out = self.dropout(out)
 
         y = self.fc_final(out) # batch_size * state_len * loc_size
-        score = F.log_softmax(y, dim=2) # batch_size * state_len * loc_size
+        score = F.log_softmax(y, dim=2)
 
         return score

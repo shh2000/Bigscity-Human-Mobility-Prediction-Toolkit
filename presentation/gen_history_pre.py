@@ -35,23 +35,34 @@ class GenHistoryPre(Presentation):
         def collactor(batch):
             loc = []
             tim = []
+            loc_len = [] # 用于 pack_padded_sequence
             history_loc = []
             history_tim = []
-            history_count = []
+            history_len = [] # 用于 pack_padded_sequnce
             uid = []
             target = []
             session_id = []
             for item in batch:
                 loc.append(item['loc'])
                 tim.append(item['tim'])
+                loc_len.append(len(item['loc']))
                 history_loc.append(item['history_loc'])
                 history_tim.append(item['history_tim'])
-                history_count.append(item['history_count'])
+                history_len.append(len(item['history_loc']))
                 uid.append(item['uid'])
                 target.append(item['target'])
                 session_id.append(item['session_id'])
-            return loc, tim, history_loc, history_tim, history_count, uid, target, session_id
-        data_loader = DataLoader(dataset=dataset, batch_size=self.config['batch_size'], num_workers=self.config['num_workers'], collate_fn=collactor)
+            max_loc_len = max(loc_len)
+            max_history_len = max(history_len)
+            for i in range(len(loc)):
+                if len(loc[i]) < max_loc_len:
+                    loc[i] += [self.pad_item[0]] * (max_loc_len - len(loc[i]))
+                    tim[i] += [self.pad_item[1]] * (max_loc_len - len(tim[i]))
+                if len(history_loc[i]) < max_history_len:
+                    history_loc[i] += [self.pad_item[0]] * (max_history_len - len(history_loc[i]))
+                    history_tim[i] += [self.pad_item[1]] * (max_history_len - len(history_tim[i]))
+            return loc, tim, loc_len, history_loc, history_tim, history_len, uid, target, session_id
+        data_loader = DataLoader(dataset=dataset, batch_size=self.config['batch_size'], num_workers=self.config['num_workers'], collate_fn=collactor, shuffle=True)
         total_batch = dataset.__len__() / self.config['batch_size']
         return {'loader': data_loader, 'total_batch': total_batch}
 
@@ -59,8 +70,7 @@ class GenHistoryPre(Presentation):
         res = {
             'loc_size': self.data['loc_size'],
             'tim_size': self.data['tim_size'],
-            'uid_size': self.data['uid_size'],
-            'target_len': self.config['pad_len'] - self.config['history_len']
+            'uid_size': self.data['uid_size']
         }
         return res
 
@@ -69,20 +79,20 @@ class GenHistoryPre(Presentation):
             # load cache
             f = open(self.cache_file_name, 'r')
             self.data = json.load(f)
-            # loc_pad = self.data['loc_size'] - 1
-            # tim_pad = self.data['tim_size'] - 1
-            # self.pad_item = (loc_pad, tim_pad)
+            loc_pad = self.data['loc_size'] - 1
+            tim_pad = self.data['tim_size'] - 1
+            self.pad_item = (loc_pad, tim_pad)
             f.close()
         else:
             # 因为对 data 的切片过滤只需要进行一次
             # 对 data 进行切片与过滤
             transformed_data = self.cutter_filter(data)
             # pad parameter
-            # loc_pad = transformed_data['loc_size']
-            # transformed_data['loc_size'] += 1
-            # tim_pad = transformed_data['tim_size']
-            # transformed_data['tim_size'] += 1
-            # self.pad_item = (loc_pad, tim_pad)
+            loc_pad = transformed_data['loc_size']
+            transformed_data['loc_size'] += 1
+            tim_pad = transformed_data['tim_size']
+            transformed_data['tim_size'] += 1
+            self.pad_item = (loc_pad, tim_pad)
             self.data = transformed_data
             # 做 cache
             if not os.path.exists(self.cache_file_folder):
@@ -213,12 +223,9 @@ class GenHistoryPre(Presentation):
         '''
         pad_item: (loc_pad, tim_pad)
         return list of data
-        (loc, tim, history_loc, hisory_tim, history_count, uid, target)
         '''
         data = []
         user_set = self.data['data_neural'].keys()
-        # pad_len = self.config['pad_len']
-        # history_len = self.config['history_len']
         for u in user_set:
             sessions = self.data['data_neural'][u]['sessions']
             if mode == 'all':
@@ -233,12 +240,7 @@ class GenHistoryPre(Presentation):
                 if len(session) <= 1:
                     continue
                 ## refactor target
-                target = [s[0] for s in session[1:]]
-                # if len(target) < pad_len - history_len:
-                #     pad_list = [self.pad_item[0] for i in range(pad_len - history_len - len(target))]
-                #     target = target + pad_list
-                # else:
-                #     target = target[-(pad_len - history_len):]
+                target = session[-1][0]
                 history = []
                 if mode == 'eval':
                     test_id = self.data['data_neural'][u]['train']
@@ -250,40 +252,12 @@ class GenHistoryPre(Presentation):
                         history.extend([(s[0], s[1]) for s in sessions[tt]])
                 for j in range(c):
                     history.extend([(s[0], s[1]) for s in sessions[train_id[j]]])
-                # refactor history
-                # if len(history) >= history_len:
-                #     # 取后 history_len 个点
-                #     history = history[-history_len:]
-                # else:
-                #     # 将 history 填充足够
-                #     pad_history = [self.pad_item for i in range(history_len - len(history))]
-                #     history = pad_history + history
-                history_tim = [t[1] for t in history]
-                history_count = [1]
-                last_t = history_tim[0]
-                count = 1
-                for t in history_tim[1:]:
-                    if t == last_t:
-                        count += 1
-                    else:
-                        history_count[-1] = count
-                        history_count.append(1)
-                        last_t = t
-                        count = 1
                 history_loc = [s[0] for s in history]  # 把多个 history 路径合并成一个？
                 history_tim = [s[1] for s in history]
                 trace['history_loc'] = history_loc
                 trace['history_tim'] = history_tim
-                trace['history_count'] = history_count
-                loc_tim = history
+                loc_tim = []
                 loc_tim.extend([(s[0], s[1]) for s in session[:-1]])
-                # refactor loc tim
-                # if len(loc_tim) < pad_len:
-                #     pad_list = [self.pad_item for i in range(pad_len - len(loc_tim))]
-                #     loc_tim = loc_tim + pad_list
-                # else:
-                #     # 截断
-                #     loc_tim = loc_tim[-pad_len:]
                 loc_np = [s[0] for s in loc_tim]
                 tim_np = [s[1] for s in loc_tim]
                 trace['loc'] = loc_np # loc 会与 history loc 有重合， loc 的前半部分为 history loc
