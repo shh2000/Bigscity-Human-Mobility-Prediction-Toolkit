@@ -41,6 +41,10 @@ class StrnnPre(Presentation):
         res = {
             'user_cnt': self.data['user_cnt'],
             'loc_cnt': self.data['loc_cnt'],
+            'up_time': self.data['up_time'],
+            'lw_time': self.data['lw_time'],
+            'up_dist': self.data['up_dist'],
+            'lw_dist': self.data['lw_dist'],
         }
         return res
 
@@ -55,12 +59,20 @@ class StrnnPre(Presentation):
         train_file = os.path.join("./cache/pre_cache/strnn_prepro_train.txt")
         valid_file = os.path.join("./cache/pre_cache/strnn_prepro_valid.txt")
         test_file = os.path.join("./cache/pre_cache/strnn_prepro_test.txt")
-        train_user, train_td, train_ld, train_loc, train_dst = self.treat_prepro(train_file, step=1)
-        valid_user, valid_td, valid_ld, valid_loc, valid_dst = self.treat_prepro(valid_file, step=2)
-        test_user, test_td, test_ld, test_loc, test_dst = self.treat_prepro(test_file, step=3)
+        train_user, train_td, train_ld, train_loc, train_dst, td_ld = self.treat_prepro(train_file, step=1)
+        maxtd, mintd, maxld, minld = td_ld[0], td_ld[1], td_ld[2], td_ld[3]
+        valid_user, valid_td, valid_ld, valid_loc, valid_dst, td_ld = self.treat_prepro(valid_file, step=2)
+        maxtd, mintd, maxld, minld = max(maxtd, td_ld[0]), min(mintd, td_ld[1]), max(maxld, td_ld[2]), min(minld, td_ld[3])
+        test_user, test_td, test_ld, test_loc, test_dst, td_ld = self.treat_prepro(test_file, step=3)
+        maxtd, mintd, maxld, minld = max(maxtd, td_ld[0]), min(mintd, td_ld[1]), max(maxld, td_ld[2]), min(minld, td_ld[3])
         # print(len(train_user), len(train_td), len(train_ld), len(train_loc), len(train_dst))
         # print(len(valid_user), len(valid_td), len(valid_ld), len(valid_loc), len(valid_dst))
         # print(len(test_user), len(test_td), len(test_ld), len(test_loc), len(test_dst))
+        self.data['up_time'] = maxtd
+        self.data['lw_time'] = mintd
+        self.data['up_dist'] = maxld
+        self.data['lw_dist'] = minld
+        json.dump(self.data, open(os.path.join("./cache/pre_cache/", self.cache_file_name), 'w'))
         self.data['train'] = [train_user, train_td, train_ld, train_loc, train_dst]
         self.data['valid'] = [valid_user, valid_td, valid_ld, valid_loc, valid_dst]
         self.data['test'] = [test_user, test_td, test_ld, test_loc, test_dst]
@@ -103,17 +115,17 @@ class StrnnPre(Presentation):
         # 一次取出一个用户的所有信息，记为feature，包括该用户的id、所有点的信息等等
         for feature in data['features']:
             # user 表示该用户的id
-            user = feature['properties']['uid']
+            user = feature['p']['id']
             if user2id.get(user) is None:
                 continue
             user = user2id.get(user)
             # 从feature中每次取一个用户的一个点
-            for position in feature['geometry']['coordinates']:
-                time = (datetime.datetime.strptime(position['time'][0], "%Y-%m-%d-%H-%M-%S")
+            for position in feature['g']['c']:
+                time = (datetime.datetime.strptime(position['t'][0], "%Y-%m-%d-%H-%M-%S")
                         - datetime.datetime(2009, 1, 1)).total_seconds() / 60  # minutes
-                lati = position['location'][0]
-                longi = position['location'][1]
-                location = position['solid_extend']['loc_id']
+                lati = position['l'][0]
+                longi = position['l'][1]
+                location = position['ex']['loc_id']
 
                 if poi2id.get(location) is None:
                     poi2id[location] = len(poi2id)  # 记录每个位置的序号
@@ -189,7 +201,9 @@ class StrnnPre(Presentation):
         print("User/Location: {:d}/{:d}".format(user_cnt, len(poi2id)))
         self.data['user_cnt'] = user_cnt
         self.data['loc_cnt'] = len(poi2id)
-        self.data['poi2id'] = poi2id
+        # self.data['poi2id'] = poi2id
+        # print(len(train_user), len(valid_user), len(test_user))
+        # print(len(train_time[0]), len(valid_time[0]), len(test_time[0]))
         json.dump(self.data, open(os.path.join("./cache/pre_cache/", self.cache_file_name), 'w'))
 
         data_model = STRNNModule(self.config['dim'], self.data['loc_cnt'],
@@ -243,6 +257,8 @@ class StrnnPre(Presentation):
             lines = train_f.readlines()  # [:13505]#[:309931]
         elif step == 3:
             lines = train_f.readlines()  # [:30622]#[:309931]
+        else:
+            lines = []
 
         train_user = []
         train_td = []
@@ -255,6 +271,11 @@ class StrnnPre(Presentation):
         user_ld = []
         user_loc = []
         user_dst = []
+
+        maxtd = 0
+        mintd = 0
+        maxld = 0
+        minld = 0
 
         for i, line in enumerate(lines):
             tokens = line.strip().split('\t')
@@ -275,6 +296,16 @@ class StrnnPre(Presentation):
             ld = np.array([float(t) for t in tokens[1].split(',')])
             loc = np.array([int(t) for t in tokens[2].split(',')])
             dst = int(tokens[3])
+            if i==1:
+                maxtd = max(td)
+                mintd = min(td)
+                maxld = max(ld)
+                minld = min(ld)
+            else:
+                maxtd = max(maxtd, max(td))
+                mintd = min(mintd, min(td))
+                maxld = max(maxld, max(ld))
+                minld = min(minld, min(ld))
             user_td.append(td)
             user_ld.append(ld)
             user_loc.append(loc)
@@ -286,4 +317,4 @@ class StrnnPre(Presentation):
             train_ld.append(user_ld)
             train_loc.append(user_loc)
             train_dst.append(user_dst)
-        return train_user, train_td, train_ld, train_loc, train_dst
+        return train_user, train_td, train_ld, train_loc, train_dst, [maxtd, mintd, maxld, minld]

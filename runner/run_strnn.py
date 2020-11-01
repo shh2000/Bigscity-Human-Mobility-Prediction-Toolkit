@@ -57,7 +57,7 @@ class StrnnRunner(Runner):
         print("==================================================================================")
         print("Test: ")
         test_batches = list(zip(data[0], data[1], data[2], data[3], data[4]))
-        self.print_score(test_batches, step=3)
+        # self.print_score(test_batches, step=3)
         evaluate_input = {}
         for batch in tqdm.tqdm(test_batches, desc="validation"):
             batch_user, batch_td, batch_ld, batch_loc, batch_dst = batch
@@ -68,7 +68,7 @@ class StrnnRunner(Runner):
                 evaluate_input[batch_user] = {}
             trace_input = {}
             trace_input['loc_true'] = [target]
-            trace_input['loc_pred'] = [list(batch_o)]
+            trace_input['loc_pred'] = [list(batch_o)[:1000]]
             evaluate_input[batch_user]['0'] = trace_input
         yield evaluate_input
 
@@ -79,8 +79,6 @@ class StrnnRunner(Runner):
         self.model = STRNNCell(self.config['dim'], model_config['pre_feature']['loc_cnt'], model_config['pre_feature']['user_cnt']).cuda()
         for key in model_config:
             self.config[key] = model_config[key]
-        self.optimizer = torch.optim.SGD(self.parameters(), lr=self.config['learning_rate'],
-                                         momentum=self.config['momentum'], weight_decay=self.config['reg_lambda'])
 
     def load_cache(self, cache_name):
         '''
@@ -102,7 +100,9 @@ class StrnnRunner(Runner):
 
     # 传入了每一个用户的td loc loc dst数据(都是list)
     def run(self, user, td, ld, loc, dst, step):
-        self.optimizer.zero_grad()
+        optimizer = torch.optim.SGD(self.parameters(), lr=self.config['learning_rate'],
+                                    momentum=self.config['momentum'], weight_decay=self.config['reg_lambda'])
+        optimizer.zero_grad()
 
         seqlen = len(td)
         user = Variable(torch.from_numpy(np.asarray([user]))).type(torch.cuda.LongTensor)
@@ -112,10 +112,11 @@ class StrnnRunner(Runner):
         # rnn_output是RNN的循环的状态h
         h_0 = Variable(torch.randn(self.config['dim'], 1), requires_grad=False).type(torch.cuda.FloatTensor)
         rnn_output = h_0
-        up_time = self.config['up_time']
-        lw_time = self.config['lw_time']
-        up_dist = self.config['up_dist']
-        lw_dist = self.config['lw_dist']
+        up_time = self.config['pre_feature']['up_time']
+        lw_time = self.config['pre_feature']['lw_time']
+        up_dist = self.config['pre_feature']['up_dist']
+        lw_dist = self.config['pre_feature']['lw_dist']
+        # print(up_time, lw_time, up_dist, lw_dist)
         for idx in range(seqlen - 1):
             td_upper = Variable(torch.from_numpy(np.asarray(up_time - td[idx]))).type(torch.cuda.FloatTensor)
             td_lower = Variable(torch.from_numpy(np.asarray(td[idx] - lw_time))).type(torch.cuda.FloatTensor)
@@ -138,7 +139,7 @@ class StrnnRunner(Runner):
         destination = Variable(torch.from_numpy(np.asarray([dst[-1]]))).type(torch.cuda.LongTensor)
         J = self.model.loss(user, td_upper, td_lower, ld_upper, ld_lower, location, destination, rnn_output)
         J.backward()
-        self.optimizer.step()
+        optimizer.step()
         return J.data.cpu().numpy()
 
     def print_score(self, batches, step):
@@ -156,14 +157,14 @@ class StrnnRunner(Runner):
                 continue
             iter_cnt += 1
             batch_o, target = self.run(batch_user, batch_td, batch_ld, batch_loc, batch_dst, step=step)
-            print('batch_user: ', end=' ')
-            print(batch_user)
-            print('len(batch_o)= ', end=' ')
-            print(len(batch_o))
-            print('batch_o= ', end=' ')
-            print(batch_o)
-            print('target= ', end=' ')
-            print(target)
+            # print('batch_user: ', end=' ')
+            # print(batch_user)
+            # print('len(batch_o)= ', end=' ')
+            # print(len(batch_o))
+            # print('batch_o= ', end=' ')
+            # print(batch_o)
+            # print('target= ', end=' ')
+            # print(target)
             recall1 += target in batch_o[:1]
             recall5 += target in batch_o[:5]
             recall10 += target in batch_o[:10]

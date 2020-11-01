@@ -63,19 +63,19 @@ class STRNNModule(nn.Module):
     def __init__(self, dim, loc_cnt, user_cnt, ww):
         super(STRNNModule, self).__init__()
         # embedding:
-        self.user_weight = Variable(torch.randn(user_cnt, dim), requires_grad=False).type(torch.cuda.FloatTensor)
+        # self.user_weight = Variable(torch.randn(user_cnt, dim), requires_grad=False).type(torch.cuda.FloatTensor)
         self.h_0 = Variable(torch.randn(dim, 1), requires_grad=False).type(torch.cuda.FloatTensor)
-        self.location_weight = nn.Embedding(loc_cnt, dim)
-        self.perm_weight = nn.Embedding(user_cnt, dim)
+        # self.location_weight = nn.Embedding(loc_cnt, dim)
+        # self.perm_weight = nn.Embedding(user_cnt, dim)
         self.ww = ww
         # attributes:
-        self.time_upper = nn.Parameter(torch.randn(dim, dim).type(torch.cuda.FloatTensor))
-        self.time_lower = nn.Parameter(torch.randn(dim, dim).type(torch.cuda.FloatTensor))
-        self.dist_upper = nn.Parameter(torch.randn(dim, dim).type(torch.cuda.FloatTensor))
-        self.dist_lower = nn.Parameter(torch.randn(dim, dim).type(torch.cuda.FloatTensor))
-        self.C = nn.Parameter(torch.randn(dim, dim).type(torch.cuda.FloatTensor))
+        # self.time_upper = nn.Parameter(torch.randn(dim, dim).type(torch.cuda.FloatTensor))
+        # self.time_lower = nn.Parameter(torch.randn(dim, dim).type(torch.cuda.FloatTensor))
+        # self.dist_upper = nn.Parameter(torch.randn(dim, dim).type(torch.cuda.FloatTensor))
+        # self.dist_lower = nn.Parameter(torch.randn(dim, dim).type(torch.cuda.FloatTensor))
+        # self.C = nn.Parameter(torch.randn(dim, dim).type(torch.cuda.FloatTensor))
         # modules:
-        self.sigmoid = nn.Sigmoid()
+        # self.sigmoid = nn.Sigmoid()
 
     # find the most closest value to w, w_cap(index)
     def find_w_cap(self, times, i):
@@ -98,8 +98,21 @@ class STRNNModule(nn.Module):
 
     def return_h_tw(self, f, times, latis, longis, locs, idx):
         w_cap = self.find_w_cap(times, idx)
-        if w_cap is 0:
-            return self.h_0
+        if w_cap == 0:
+            lati = latis[idx] - latis[w_cap:idx]
+            longi = longis[idx] - longis[w_cap:idx]
+            td = times[idx] - times[w_cap:idx]
+            ld = self.euclidean_dist(lati, longi)
+
+            data = ','.join(str(e) for e in td.data.cpu().numpy()) + "\t"
+            f.write(data)
+            data = ','.join(str(e) for e in ld.data.cpu().numpy()) + "\t"
+            f.write(data)
+            data = ','.join(str(e.data.cpu().numpy()) for e in locs[w_cap:idx]) + "\t"  # q ti u
+            f.write(data)
+            data = str(locs[idx].data.cpu().numpy()) + "\n"  # q t u
+            f.write(data)
+            return
         else:
             self.return_h_tw(f, times, latis, longis, locs, w_cap)
 
@@ -116,10 +129,8 @@ class STRNNModule(nn.Module):
         f.write(data)
         data = ','.join(str(e) for e in ld.data.cpu().numpy()) + "\t"
         f.write(data)
-        # data = ','.join(str(e.data.cpu().numpy()[0]) for e in locs[w_cap:idx])+"\t"
         data = ','.join(str(e.data.cpu().numpy()) for e in locs[w_cap:idx]) + "\t"  # q ti u
         f.write(data)
-        # data = str(locs[idx].data.cpu().numpy()[0])+"\n"
         data = str(locs[idx].data.cpu().numpy()) + "\n"  # q t u
         f.write(data)
 
@@ -142,7 +153,6 @@ class STRNNModule(nn.Module):
     def euclidean_dist(self, x, y):
         return torch.sqrt(torch.pow(x, 2) + torch.pow(y, 2))
 
-    # neg_lati, neg_longi, neg_loc, step):
     # user, times, latis, longis, locs全是一维的
     def forward(self, f, user, times, latis, longis, locs, step):
         f.write(str(user.data.cpu().numpy()[0]) + "\n")
