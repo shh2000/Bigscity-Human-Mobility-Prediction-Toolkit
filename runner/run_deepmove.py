@@ -117,7 +117,7 @@ class DeepMoveRunner(Runner):
                 s = session_id[i]
                 trace_input = {}
                 trace_input['loc_true'] = [target[i].item()]
-                trace_input['loc_pred'] = true_scores[i].tolist()
+                trace_input['loc_pred'] = [true_scores[i].tolist()]
                 if u not in evaluate_input:
                     evaluate_input[u] = {}
                 evaluate_input[u][s] = trace_input

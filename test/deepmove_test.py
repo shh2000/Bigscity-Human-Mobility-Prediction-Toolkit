@@ -13,13 +13,14 @@ config = {
 }
 
 task = NextLocPred(config=config, model_name="deepMove", pre_name="GenHistoryPre", dataset_name="foursquare-tky")
-task.run(True)
+task.run(False)
 # # 测试 task 的 run
 # self = task
 # data = self.dataset.load(self.dataset_name)
 # self.pre.transfer_data(data)
 # self.config['model']['pre_feature'] = self.pre.get_data_feature()
 # self.runner.init_model(self.config['model'])
+# self.runner.load_cache(self.model_cache)
 # self.runner.train(train_data=self.pre.get_data('train'), eval_data=self.pre.get_data('eval'))
 # # self.runner.save_cache(self.model_cache)
 # res = self.runner.predict(self.pre.get_data('test'))
@@ -61,7 +62,7 @@ task.run(True)
 # train_data=self.pre.get_data('train')
 # data_loader = train_data['loader']
 # loc, tim, loc_len, history_loc, history_tim, history_len, uid, target, session_id = data_loader.__iter__().__next__()
-# self = self.runner.model
+# # self = self.runner.model
 # loc = torch.LongTensor(loc).cuda()
 # tim = torch.LongTensor(tim).cuda()
 # history_loc = torch.LongTensor(history_loc).cuda()
