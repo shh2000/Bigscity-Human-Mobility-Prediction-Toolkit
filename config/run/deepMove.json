@@ -1,9 +1,9 @@
 {
     "use_cuda": true,
-    "lr": 0.003,
+    "lr": 5e-4,
     "L2": 1e-5, 
-    "max_epoch": 2,
-    "lr_step": 3,
+    "max_epoch": 1,
+    "lr_step": 2,
     "lr_decay": 0.1,
     "clip": 5.0,
     "schedule_threshold": 1e-3,

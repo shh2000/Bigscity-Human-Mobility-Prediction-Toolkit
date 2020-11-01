@@ -25,14 +25,14 @@ def output(method, value, field):
             print('{} avg_acc={:.3f}'.format(method, value))
 
 
-def transfer_data(data, data_type, maxk):
+def transfer_data(data, model, maxk):
     """
     Here we transform specific data types to standard input type
     """
     if type(data) == str:
         data = json.loads(data)
     assert type(data) == dict, "待评估数据的类型/格式不合法"
-    if data_type == 'DeepMove':
+    if model == 'DeepMove':
         user_idx = data.keys()
         for user_id in user_idx:
             trace_idx = data[user_id].keys()

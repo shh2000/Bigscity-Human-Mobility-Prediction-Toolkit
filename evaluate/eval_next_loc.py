@@ -1,4 +1,6 @@
 import json
+import time
+
 import numpy as np
 import os
 import shutil
@@ -26,7 +28,7 @@ class EvaluateNextLoc:
         self.output_switch = self.config['output_switch'].lower() == 'true'
         self.mode_list = self.config['mode_list']
         self.data_path = self.config['data_path']
-        self.data_type = self.config['data_type']
+        self.model = self.config['model']
         self.mode = self.config['mode']
         self.load_config(config)
         # 初始化类的内部变量
@@ -34,8 +36,11 @@ class EvaluateNextLoc:
         self.maxK = 1
         self.topK_pattern = re.compile("top-[1-9]\\d*$")
         self.data = None
+        self.data_batch = 0
         self.metrics = {}
         self.trace_metrics = {}
+        self.model_metrics = {}
+        self.para_metrics = {}
         # 检查是否有不支持的配置
         self.check_config()
 
@@ -51,8 +56,8 @@ class EvaluateNextLoc:
             self.mode_list = config['mode_list']
         if 'data_path' in config.keys():
             self.data_path = config['data_path']
-        if 'data_type' in config.keys():
-            self.data_type = config['data_type']
+        if 'model' in config.keys():
+            self.model = config['model']
         if 'mode' in config.keys():
             self.mode = config['mode']
 
@@ -60,11 +65,9 @@ class EvaluateNextLoc:
         # check mode
         for mode in self.mode:
             if mode in self.mode_list:
-                self.metrics[mode] = []
                 self.trace_metrics[mode] = []
             elif re.match(self.topK_pattern, mode) is not None:
                 k = int(mode.split('-')[1])
-                self.metrics[mode] = []
                 self.trace_metrics[mode] = []
                 self.maxK = k if k > self.maxK else self.maxK
             else:
@@ -95,24 +98,27 @@ class EvaluateNextLoc:
     def save_result(self, result_path=None):
         """
         :param result_path: 绝对路径，存放结果json
-        :return:
+        :return: 文件名
         """
         if result_path is None:
             raise ValueError('请正确指定保存评估结果的绝对路径')
-        # if os.path.exists(result_path):
-        #     shutil.rmtree(result_path)
+        self.calculate_mode_metrics()
         if not os.path.exists(result_path):
             os.mkdir(result_path)
-        with open(result_path + '/res.txt', "w") as f:
-            f.write(json.dumps(self.metrics))
-            f.write('\n')
-            f.write(json.dumps(self.trace_metrics))
+        now = time.strftime("%Y-%m-%d", time.localtime(time.time()))
+        filename = result_path + '/res_' + self.model + '_' + now + '.txt'
+        with open(filename, "w") as f:
+            metrics = {'model': self.model_metrics, 'data': self.metrics}
+            f.write(json.dumps(metrics, indent=1))
+        return filename
 
     def evaluate_data(self):
         """
         evaluate data batch (internal)
         """
-        self.data = transfer_data(self.data, self.data_type, self.maxK)
+        self.metrics[self.generate_name()] = {}
+        self.para_metrics[self.generate_name()] = {}
+        self.data = transfer_data(self.data, self.model, self.maxK)
         loc_true = []
         loc_pred = []
         user_ids = self.data.keys()
@@ -126,7 +132,9 @@ class EvaluateNextLoc:
                 loc_true.extend(t_loc_true)
                 loc_pred.extend(t_loc_pred)
                 self.run_mode(t_loc_pred, t_loc_true, 'trace')
+        self.para_metrics[self.generate_name()]['data_size'] = len(loc_true)
         self.run_mode(loc_pred, loc_true, 'model')
+        self.data_batch = self.data_batch + 1
 
     def run_mode(self, loc_pred, loc_true, field):
         """
@@ -145,10 +153,12 @@ class EvaluateNextLoc:
             if mode == 'ACC':
                 t, avg_acc = ACC(np.array(t_loc_pred[0]), np.array(loc_true))
                 self.add_metrics(mode, field, avg_acc)
+                self.para_metrics[self.generate_name()][mode] = np.sum(t == 0)
             elif re.match(self.topK_pattern, mode) is not None:
-                avg_acc = top_k(np.array(t_loc_pred, dtype=object), np.array(loc_true, dtype=object),
-                                int(mode.split('-')[1]))
+                t, avg_acc = top_k(np.array(t_loc_pred, dtype=object), np.array(loc_true, dtype=object),
+                                   int(mode.split('-')[1]))
                 self.add_metrics(mode, field, avg_acc)
+                self.para_metrics[self.generate_name()][mode] = np.sum(t < int(mode.split('-')[1]))
             else:
                 avg_loss = 0
                 if mode == "SMAPE":
@@ -175,6 +185,32 @@ class EvaluateNextLoc:
         if self.output_switch:
             output(method, avg, field)
         if field == 'model':
-            self.metrics[method].append(avg)
+            self.metrics['data batch ' + str(self.data_batch)][method] = avg
         else:
             self.trace_metrics[method].append(avg)
+
+    def calculate_mode_metrics(self):
+        if self.data_batch == 1:
+            self.model_metrics = {}
+            for data in self.metrics.keys():
+                for mode in self.metrics[data].keys():
+                    self.model_metrics[mode] = self.metrics[data][mode]
+        else:
+            self.model_metrics = {}
+            self.para_metrics['model'] = {}
+            self.para_metrics['model']['data_size'] = 0
+            for data in self.para_metrics.keys():
+                for mode in self.para_metrics[data].keys():
+                    if mode == 'data_size':
+                        self.para_metrics['model']['data_size'] += self.para_metrics[data][mode]
+                    elif mode in self.para_metrics['model'].keys():
+                        self.para_metrics['model'][mode] += self.para_metrics[data][mode]
+                    else:
+                        self.para_metrics['model'][mode] = self.para_metrics[data][mode]
+            for mode in self.para_metrics['model'].keys():
+                if mode == 'data_size':
+                    continue
+                self.model_metrics[mode] = self.para_metrics['model'][mode] / self.para_metrics['model']['data_size']
+
+    def generate_name(self):
+        return 'data batch ' + str(self.data_batch)
