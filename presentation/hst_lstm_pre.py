@@ -28,10 +28,15 @@ class HSTLSTMPre(Presentation):
         self.data = None
 
     def get_data(self, mode):
+        last_train = int(math.floor(self.config['user_size'] * self.config['train_rate']))
+        last_eval = last_train + int(math.floor(self.config['user_size'] * self.config['eval_rate']))
+        last_test = last_eval + int(math.floor(self.config['user_size']*self.config['test_rate']))
         if mode == 'train':
-            return self.data[:math.floor(self.config['user_size']*self.config['train_rate'])]
+            return self.data[:last_train]
         if mode == 'eval':
-            return self.data[:math.floor(self.config['user_size']*self.config['eval_rate'])]
+            return self.data[last_train:last_eval]
+        if mode == 'test':
+            return self.data[last_eval:last_test]
 
     def get_data_feature(self):
         return self.data.shape

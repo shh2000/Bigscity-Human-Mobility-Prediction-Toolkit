@@ -64,12 +64,16 @@ class HSTLSTMRunner(Runner):
                     eval_loss += loss.sum().detach().to("cpu").item()
                     eval_acc += prediction[:, :-1].eq(eval_data[:, session, 1:, 0]).detach().to(
                         "cpu").sum().item() / prediction.numel()
-                print("Validation: eval_loss: {}       eval_acc: {}".format(eval_loss, eval_acc / (eval_data.size(1)-1)))
+                print("\nValidation: eval_loss: {}       eval_acc: {}\n".format(eval_loss, eval_acc / (eval_data.size(1)-1)))
 
     def predict(self, pre):  # 默认最后一个session是要预测的
         if self.config["use_gpu"]:
             pre = pre.cuda()
-        return self.model(pre[:, :-1, :, :], pre[:, -1, :, :])
+        output = self.model(pre[:, :-1, :, :], pre[:, -1, :, :])[0]
+        res = {}
+        for user in range(pre.size(0)):
+            res['uid{}'.format(user)] = {'trace_id1': {'loc_true': pre[user, -1, 1:, 0].tolist(), 'loc_pred': output[user, :-1].tolist()}}
+        return res
 
     def load_cache(self, cache_name):
         if os.path.exists(os.path.join(self.dir_path, cache_name)):

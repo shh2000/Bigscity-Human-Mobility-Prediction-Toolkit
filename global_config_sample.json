@@ -13,5 +13,9 @@
   },
   "model": {
     "pre_feature": null
+  },
+  "evaluate": {
+    "model": "HST-LSTM",
+    "mode": ["ACC", "top-2"]
   }
 }

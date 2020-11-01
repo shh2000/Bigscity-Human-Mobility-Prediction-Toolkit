@@ -41,7 +41,7 @@ with open(dir_path+"datasets/data/gowalla.json") as f:
 print(data["features"])
 '''
 
-task = NextLocPred(global_config, 'HSTLSTM', 'HSTLSTMPre', 'gowalla')
+task = NextLocPred(global_config, 'HST-LSTM', 'HSTLSTMPre', 'gowalla')
 task.run(train=True)
 
 

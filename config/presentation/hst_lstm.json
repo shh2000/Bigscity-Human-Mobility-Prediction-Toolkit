@@ -3,12 +3,13 @@
     "dir_path": "",
     "step_size": 10,
     "session_size": 10,
-    "user_size": 40,
-    "time_slot_size": 20,
-    "space_slot_size": 20,
-    "aoi_size": 10,
+    "user_size": 200,
+    "time_slot_size": 30,
+    "space_slot_size": 30,
+    "aoi_size": 100,
     "time_span": 10,
     "batch_size": 20,
     "train_rate": 0.6,
-    "eval_rate": 0.2
+    "eval_rate": 0.2,
+    "test_rate": 0.2
 }

@@ -234,7 +234,7 @@ class HSTLSTM(nn.Module):
         self.aoi_embedding = nn.Embedding(self.aoi_size, self.input_size)
 
         # layers
-        self.soft_max = nn.Softmax(dim=1)
+        self.soft_max = nn.Softmax(dim=-1)
         self.encoding_stlstm = STLSTM(self.input_size, self.hidden_size, self.use_gpu, self.bias)
         self.context_lstm = nn.LSTM(self.hidden_size, self.hidden_size)
         self.decoding_stlstm = STLSTM(self.input_size, self.hidden_size, self.use_gpu, self.bias)

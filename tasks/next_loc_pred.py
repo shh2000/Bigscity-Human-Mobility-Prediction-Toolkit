@@ -23,9 +23,8 @@ class NextLocPred(Task):
         if 'model' not in self.config['evaluate']:
             self.config['evaluate']['model'] = self.get_data_type(model_name)
         self.evaluate = EvaluateNextLoc(self.config['evaluate'])
-        self.evaluate_res_dir = './cache/evaluate_cache'
-        
-    
+        self.evaluate_res_dir = 'cache/evaluate_cache'
+
     def run(self, train):
         # 需要检查模型是否已经训练过了
         print('Loading data...')
@@ -46,11 +45,12 @@ class NextLocPred(Task):
         else:
             # load model from cache
             self.runner.load_cache(self.model_cache)
-        #res = self.runner.predict(self.pre.get_data('test'))
-        #for evaluate_input in res:
-         #   self.evaluate.evaluate(evaluate_input)
-        #self.evaluate.save_result(self.evaluate_res_dir)
-        
+        res = [self.runner.predict(self.pre.get_data('test'))]
+        for evaluate_input in res:
+            with open('./test.json', 'w') as f:
+                json.dump(evaluate_input, f)
+            self.evaluate.evaluate(evaluate_input)
+        self.evaluate.save_result(os.path.join(self.config['dir_path'], self.evaluate_res_dir))
         
     def get_pre(self, pre_name, cache_name):
         if pre_name == 'GenHistoryPre':
@@ -68,7 +68,7 @@ class NextLocPred(Task):
     def get_runner(self, model_name):
         if model_name == 'deepMove':
             return DeepMoveRunner(self.config['train'])
-        elif model_name == 'HSTLSTM':
+        elif model_name == 'HST-LSTM':
             return HSTLSTMRunner(self.config)
         else:
             raise ValueError('no this model!')
