@@ -1,5 +1,5 @@
 {
-    "n_epoch": 1,
+    "n_epoch": 100,
     "n_neg": 10,
     "n_factor": 32,
     "learn_rate": 0.01,

@@ -10,9 +10,9 @@ def sigmoid(x):
 
 
 def load_data_from_dir(dirname):
-    fname_user_idxseq = dirname + '/' + 'idxseq.txt'
-    fname_user_list = dirname + '/' + 'user_idx_list.txt'
-    fname_item_list = dirname + '/' + 'item_idx_list.txt'
+    fname_user_idxseq = dirname + '/' + 'loc_seq.txt'
+    fname_user_list = dirname + '/' + 'user_list.txt'
+    fname_item_list = dirname + '/' + 'location_list.txt'
     user_set = load_idx_list_file(fname_user_list)
     item_set = load_idx_list_file(fname_item_list)
 

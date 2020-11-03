@@ -6,7 +6,7 @@ class Presentation(object):
         config: 为外部传入的 global config，global config 将会覆盖 config 中的同名参数
         cache_name: 可以传递 datasetName，并不一定是最后的 cache 文件名，因为还需要将 pre 的参数也写到 cache 的文件名里面
         '''
-        raise NotImplementedError("Presentation not implemented")
+        #raise NotImplementedError("Presentation not implemented")
 
     def get_data(self, mode):
         '''

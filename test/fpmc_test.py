@@ -7,14 +7,17 @@ sys.path.append(rootPath)
 
 from runner.run_fpmc import *
 from evaluate.eval_next_loc import EvaluateNextLoc
+from presentation.fpmc_presentation import *
 
 if __name__ == '__main__':
     # 测试模型
     model = FPMCRunner(os.getcwd())
+    fpmc_pre = FpmcPresentation(None, None, None)
+    fpmc_pre.transfer_data('./datasets/foursquare-tky.json')
     train_data, eval_data = model.init_model()
     model.train(train_data, eval_data)
     eval_dict = model.predict(model.config['input_dir'])
-    print(eval_dict)
+    #print(eval_dict)
     #print('{} {} {}'.format(type(eval_dict), type(eval_dict[0]), type[eval_dict[0]['loc_pred']]))
 
     # 测试evaluation
