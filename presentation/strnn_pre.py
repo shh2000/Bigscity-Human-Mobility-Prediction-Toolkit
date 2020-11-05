@@ -23,6 +23,8 @@ class StrnnPre(Presentation):
         self.cache_file_name = 'strnn_pre_{}_{}.json'.format(cache_name, parameters_str)
         self.data = dict()
         self.pad_item = None
+        self.dataset_name = cache_name
+
 
     def get_data(self, mode):
         '''
@@ -56,9 +58,9 @@ class StrnnPre(Presentation):
             # 处理数据
             self.pre_data(data)
         # load cache
-        train_file = os.path.join("./cache/pre_cache/strnn_prepro_train.txt")
-        valid_file = os.path.join("./cache/pre_cache/strnn_prepro_valid.txt")
-        test_file = os.path.join("./cache/pre_cache/strnn_prepro_test.txt")
+        train_file = os.path.join("./cache/pre_cache/strnn_prepro_train_%s.txt" % self.dataset_name)
+        valid_file = os.path.join("./cache/pre_cache/strnn_prepro_valid_%s.txt" % self.dataset_name)
+        test_file = os.path.join("./cache/pre_cache/strnn_prepro_test_%s.txt" % self.dataset_name)
         train_user, train_td, train_ld, train_loc, train_dst, td_ld = self.treat_prepro(train_file, step=1)
         maxtd, mintd, maxld, minld = td_ld[0], td_ld[1], td_ld[2], td_ld[3]
         valid_user, valid_td, valid_ld, valid_loc, valid_dst, td_ld = self.treat_prepro(valid_file, step=2)
@@ -210,7 +212,7 @@ class StrnnPre(Presentation):
                                  self.data['user_cnt'], self.config['ww']).cuda()
 
         print("Making train file...")
-        f = open(os.path.join("./cache/pre_cache/strnn_prepro_train.txt"), 'w')
+        f = open(os.path.join("./cache/pre_cache/strnn_prepro_train_%s.txt" % self.dataset_name), 'w')
         # Training
         # 不同user的time,lat,lon,loc是不一样多的 这里进行了合并
         # 效果是 time[0],lat[0],lon[0],loc[0]合并到一起  time[1],lat[1],lon[1],loc[1]合并到一起...
@@ -223,7 +225,7 @@ class StrnnPre(Presentation):
         f.close()
 
         print("Making valid file...")
-        f = open(os.path.join("./cache/pre_cache/strnn_prepro_valid.txt"), 'w')
+        f = open(os.path.join("./cache/pre_cache/strnn_prepro_valid_%s.txt" % self.dataset_name), 'w')
         # Eavludating
         valid_batches = list(zip(valid_time, valid_lati, valid_longi, valid_loc))
         for j, valid_batch in enumerate(tqdm.tqdm(valid_batches, desc="valid")):
@@ -232,7 +234,7 @@ class StrnnPre(Presentation):
         f.close()
 
         print("Making test file...")
-        f = open(os.path.join("./cache/pre_cache/strnn_prepro_test.txt"), 'w')
+        f = open(os.path.join("./cache/pre_cache/strnn_prepro_test_%s.txt" % self.dataset_name), 'w')
         # Testing
         test_batches = list(zip(test_time, test_lati, test_longi, test_loc))
         for j, test_batch in enumerate(tqdm.tqdm(test_batches, desc="test")):
