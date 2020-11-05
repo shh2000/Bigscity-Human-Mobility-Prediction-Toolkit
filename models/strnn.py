@@ -4,6 +4,8 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 import math
 import numpy as np
+import sys
+sys.setrecursionlimit(100000)
 
 
 class STRNNCell(nn.Module):
