@@ -1,6 +1,5 @@
 {
   "dim": 13,
-  "ww": 360,
   "reg_lambda": 0.1,
   "batch_size": 2,
   "num_epochs": 30,
