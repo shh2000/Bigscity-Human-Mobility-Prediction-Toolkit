@@ -106,8 +106,8 @@ class StrnnPre(Presentation):
 
         for feature in data['features']:
             # user 表示该用户的id
-            user = feature['p']['id']
-            if len(feature['g']['c']) >= visit_thr:
+            user = feature['properties']['uid']
+            if len(feature['geometry']['coordinates']) >= visit_thr:
                 user2id[user] = len(user2id)
         # print('user2id')
         # print(user2id)
@@ -115,17 +115,17 @@ class StrnnPre(Presentation):
         # 一次取出一个用户的所有信息，记为feature，包括该用户的id、所有点的信息等等
         for feature in data['features']:
             # user 表示该用户的id
-            user = feature['p']['id']
+            user = feature['properties']['uid']
             if user2id.get(user) is None:
                 continue
             user = user2id.get(user)
             # 从feature中每次取一个用户的一个点
-            for position in feature['g']['c']:
-                time = (datetime.datetime.strptime(position['t'][0], "%Y-%m-%d-%H-%M-%S")
+            for position in feature['geometry']['coordinates']:
+                time = (datetime.datetime.strptime(position['time'][0], "%Y-%m-%d-%H-%M-%S")
                         - datetime.datetime(2009, 1, 1)).total_seconds() / 60  # minutes
-                lati = position['l'][0]
-                longi = position['l'][1]
-                location = position['ex']['loc_id']
+                lati = position['location'][0]
+                longi = position['location'][1]
+                location = position['solid_extend']['loc_id']
 
                 if poi2id.get(location) is None:
                     poi2id[location] = len(poi2id)  # 记录每个位置的序号
