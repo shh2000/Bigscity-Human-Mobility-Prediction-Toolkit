@@ -32,7 +32,7 @@ def transfer_data(data, model, maxk):
     if type(data) == str:
         data = json.loads(data)
     assert type(data) == dict, "待评估数据的类型/格式不合法"
-    if model == 'DeepMove' or model == 'HST-LSTM':
+    if model in ['DeepMove', 'HST-LSTM', 'fpmc']:
         user_idx = data.keys()
         for user_id in user_idx:
             trace_idx = data[user_id].keys()

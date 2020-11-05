@@ -36,4 +36,4 @@ if __name__ == '__main__':
     data_list = [data, data2]
     for data in data_list:
         var.evaluate(data)
-    var.save_result(r'D:\Users\12908\Documents\git\Bigscity-Human-Mobility-Prediction-Toolkit/runtimeFiles/evaluate')
+    var.save_result(r'D:\Users\12908\Documents\git\Bigscity-Human-Mobility-Prediction-Toolkit/cache/evaluate_cache')
