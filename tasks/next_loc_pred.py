@@ -5,6 +5,8 @@ import torch
 from tasks.basic import Task
 from presentation.gen_history_pre import GenHistoryPre
 from runner.run_deepmove import DeepMoveRunner
+from presentation.strnn_pre import StrnnPre
+from runner.run_strnn import StrnnRunner
 from datasets.basic import Dataset
 from evaluate.eval_next_loc import EvaluateNextLoc
 
@@ -21,8 +23,8 @@ class NextLocPred(Task):
             self.config['evaluate']['model'] = self.get_data_type(model_name)
         self.evaluate = EvaluateNextLoc(self.config['evaluate'])
         self.evaluate_res_dir = './cache/evaluate_cache'
-        
-    
+
+
     def run(self, train):
         # 需要检查模型是否已经训练过了
         data = self.dataset.load(self.dataset_name)
@@ -42,22 +44,28 @@ class NextLocPred(Task):
         for evaluate_input in res:
             self.evaluate.evaluate(evaluate_input)
         self.evaluate.save_result(self.evaluate_res_dir)
-        
-        
+
+
     def get_pre(self, pre_name, cache_name):
         if pre_name == 'GenHistoryPre':
             return GenHistoryPre(self.config['presentation'], cache_name)
+        elif pre_name == 'STRNNPre':
+            return StrnnPre(self.config['presentation'], cache_name)
         else:
             raise ValueError('no this presentation!')
-    
+
     def get_runner(self, model_name):
         if model_name == 'deepMove':
             return DeepMoveRunner(self.config['train'])
+        elif model_name == 'strnn':
+            return StrnnRunner(self.config['train'])
         else:
             raise ValueError('no this model!')
 
     def get_data_type(self, model_name):
         if model_name == 'deepMove':
             return 'DeepMove'
+        elif model_name == 'strnn':
+            return 'STRNN'
         else:
             raise ValueError('no this model!')
